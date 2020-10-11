@@ -10,6 +10,156 @@ void MainWindow::get_carac(MyMesh* _mesh){
     qDebug() << "Is triangle" << _mesh->is_triangles();
 }
 
+void MainWindow::export_csv(){
+    std::map<MyMesh::Scalar, int> area_freq = area_frequency(&mesh);
+    std::map<MyMesh::Scalar, int> dihedral_freq = dihedral_angles(&mesh);
+
+}
+
+
+void MainWindow::boite_englobante(MyMesh* _mesh)
+{
+    MyMesh::Point  max_coord;
+    MyMesh::Point  min_coord;
+    for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it)
+    {
+        VertexHandle vh = v_it;
+        MyMesh::Point p = _mesh->point(vh);
+        if(max_coord[0] < p[0]){
+            max_coord[0] = p[0];
+        }
+        if(max_coord[1] < p[1]){
+            max_coord[1] = p[1];
+        }
+        if(max_coord[2] < p[2]){
+            max_coord[2] = p[2];
+        }
+        if(min_coord[0] < p[0]){
+            min_coord[0] = p[0];
+        }
+        if(min_coord[1] < p[1]){
+            min_coord[1] = p[1];
+        }
+        if(min_coord[2] < p[2]){
+            min_coord[2] = p[2];
+        }
+    }
+
+
+}
+
+
+uint * MainWindow::valence(MyMesh* _mesh)
+{
+    int nb_sommets = _mesh->n_vertices();
+    uint valences[nb_sommets];
+    int cpt = 0;
+    uint max = 0;
+
+    for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it)
+    {
+        VertexHandle vh = *v_it;
+        valences[cpt] += _mesh->valence(vh);
+        ++cpt;
+    }
+    for (int i = 0; i < cpt ; i++)//vérifier si c est cpt ou cpt+1
+    {
+        if(valences[i] > max)
+        {
+            max=valences[i];
+        }
+    }
+    uint nb_sommets_valence[max]; //nombre de sommets ayant la valence comme indice
+    for(int i = 0; i < cpt ; i++)
+    {
+        nb_sommets_valence[valences[i]] += 1;
+    }
+    return  nb_sommets_valence;
+}
+
+std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
+    std::vector<MyMesh::Scalar> faces_area;
+    std::map<MyMesh::Scalar, int> area_freq;
+    MyMesh::Scalar minArea = 10000;
+    MyMesh::Scalar maxArea = 0;
+
+    for (MyMesh::FaceIter curFace = _mesh->faces_begin(); curFace != _mesh->faces_end(); curFace++) {
+        FaceHandle fh = curFace;
+        HalfedgeHandle heh = _mesh->halfedge_handle(fh);
+        MyMesh::Scalar s = _mesh->calc_sector_area(heh);
+        faces_area.push_back(s);
+
+        if(minArea > s)
+            minArea = s;
+        if(maxArea < s)
+            maxArea = s;
+    }
+
+    // maxArea = 100%
+    // ? = (minArea)/maxArea
+    MyMesh::Scalar current_area = minArea;
+    while(current_area < maxArea){
+        area_freq[current_area] = 0;
+        for(MyMesh::Scalar sc: faces_area){
+            if(is_in_range(sc, current_area, 1)) // marge of error equal to one.
+                area_freq[current_area] += 1;
+        }
+        current_area += 0.1*minArea;
+    }
+    current_area = maxArea;
+    for(MyMesh::Scalar sc: faces_area){
+        if(is_in_range(sc, current_area, 1)) // marge of error equal to one.
+            area_freq[current_area] += 1;
+    }
+
+    return area_freq;
+}
+
+bool MainWindow::is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh::Scalar marginOfError){
+    if(valueTest >= a - marginOfError && valueTest <= a + marginOfError)
+        return true;
+    return false;
+}
+
+std::map<MyMesh::Scalar, int> MainWindow::dihedral_angles(MyMesh *_mesh){
+    std::vector<MyMesh::Scalar> angles;
+    std::map<MyMesh::Scalar, int> frequency;
+    MyMesh::Scalar pi= 3.14159265;
+
+    //Initialisation de la map
+    int i = 0;
+    while(i <= 360){
+        frequency[i] = 0;
+        i += 10;
+    }
+
+    // On recupere la valeur des angles diedre
+    for(MyMesh::EdgeIter curEdge = _mesh->edges_begin(); curEdge != _mesh->edges_end(); curEdge++){
+        EdgeHandle eh = curEdge;
+        if(!_mesh->is_boundary(eh)){
+            MyMesh::Scalar s_rad = _mesh->calc_dihedral_angle(eh);
+            MyMesh::Scalar s_deg = (s_rad*180)/pi;
+            angles.push_back(s_deg);
+        }
+
+
+    }
+    // On On enumere le nombre d'angle pour chaque tranche de 10° de 0° a 360°
+    MyMesh::Scalar marginError = 2;
+    for (int i = 0; i<=360 ; i+=10) {
+        for (int j=0; j < (int) angles.size(); j++) {
+            if(is_in_range(angles.at(j), i, marginError))
+                frequency[i]++;
+        }
+    }
+
+    /*for (int i = 0; i<=360 ; i+=10) {
+        qDebug() << "Nombres d'angles pour" << i <<"(degres)"<<frequency[i];
+    }*/
+
+    return frequency;
+}
+
 //test si il y a la présence d'une face isolée.
 bool MainWindow::test_lonely_face(MyMesh* _mesh){
     bool face_seule = true;

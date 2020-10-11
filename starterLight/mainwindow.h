@@ -44,6 +44,17 @@ public:
     // les fonctions à compléter
     void get_carac(MyMesh* _mesh);
     bool onlyTriangles(MyMesh* _mesh);
+    // Fonction de Leo
+    MyMesh::Point centre_gravite(MyMesh* _mesh);
+    void boite_englobante(MyMesh* _mesh);
+    uint * valence(MyMesh* _mesh);
+    // Fonction de Elias
+    bool is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh::Scalar marginOfError);
+    void show_vf_list(MyMesh* _mesh);
+    std::map<MyMesh::Scalar, int> area_frequency(MyMesh* _mesh);
+    std::map<MyMesh::Scalar, int> dihedral_angles(MyMesh* _mesh);
+    void export_csv();
+    // Fonctions de thomas
     bool test_lonely_face(MyMesh* _mesh);
     bool test_lonely_vertex(MyMesh* _mesh);
     bool test_lonely_edge(MyMesh* _mesh);
