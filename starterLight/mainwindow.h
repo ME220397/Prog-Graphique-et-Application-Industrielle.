@@ -82,6 +82,8 @@ private slots:
     void on_pushButton_seuls_clicked();
     void on_pushButton_ecart_angulaire_clicked();
 
+    void on_pushButton_clicked();
+
 private:
 
     bool modevoisinage;

@@ -1,6 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <math.h>
+#include <iostream>
+#include <fstream>
+#include <QDir>
 
 
 /* **** début de la partie à compléter **** */
@@ -13,6 +16,41 @@ void MainWindow::get_carac(MyMesh* _mesh){
 void MainWindow::export_csv(){
     std::map<MyMesh::Scalar, int> area_freq = area_frequency(&mesh);
     std::map<MyMesh::Scalar, int> dihedral_freq = dihedral_angles(&mesh);
+
+    /** Frequence des aires **/
+    // chemin à changer selon votre systeme
+    // Elias = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
+    QString path = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
+    QFile my_area(path);
+
+    if(my_area.open(QFile::WriteOnly|QFile::Truncate)){
+        QTextStream stream(&my_area);
+        stream << "Frequences des aires," << "nombres faces\n";
+        for (auto& x: area_freq) {
+            qDebug() << x.first << "," << x.second;
+            if(x.second > 0)
+                stream << x.first << "," << x.second << "\n";
+        }
+    }
+
+    my_area.close();
+    qDebug() << "CSV AREA WRITED !!";
+
+    /** Angle dihedres **/
+    path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
+    QFile my_dihedral(path);
+
+    if(my_dihedral.open(QFile::WriteOnly|QFile::Truncate)){
+        QTextStream stream(&my_dihedral);
+        stream << "Frequences ddes angles dihedres," << "nombres\n";
+        for (auto& x: dihedral_freq) {
+            qDebug() << x.first << "," << x.second;
+            if(x.second > 0)
+                stream << x.first << "," << x.second << "\n";
+        }
+    }
+
+    my_dihedral.close();
 
 }
 
@@ -595,4 +633,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    export_csv();
 }
