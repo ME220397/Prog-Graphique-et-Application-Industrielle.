@@ -66,6 +66,7 @@ public:
     int nb_faces_isole(MyMesh* _mesh);
     int nb_points_isole(MyMesh* _mesh);
     int nb_aretes_isole(MyMesh* _mesh);
+    std::map<MyMesh::Scalar, int> ecart_ang(MyMesh* _mesh);
 
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);
     void resetAllColorsAndThickness(MyMesh* _mesh);

@@ -16,11 +16,12 @@ void MainWindow::get_carac(MyMesh* _mesh){
 void MainWindow::export_csv(){
     std::map<MyMesh::Scalar, int> area_freq = area_frequency(&mesh);
     std::map<MyMesh::Scalar, int> dihedral_freq = dihedral_angles(&mesh);
+    std::map<MyMesh::Scalar, int> ecart_angulaire = ecart_ang(&mesh);
 
     /** Frequence des aires **/
     // chemin à changer selon votre systeme
     // Elias = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
-    QString path = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
+    QString path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
     QFile my_area(path);
 
     if(my_area.open(QFile::WriteOnly|QFile::Truncate)){
@@ -37,12 +38,12 @@ void MainWindow::export_csv(){
     qDebug() << "CSV AREA WRITED !!";
 
     /** Angle dihedres **/
-    path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
+    path =  "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
     QFile my_dihedral(path);
 
     if(my_dihedral.open(QFile::WriteOnly|QFile::Truncate)){
         QTextStream stream(&my_dihedral);
-        stream << "Frequences ddes angles dihedres," << "nombres\n";
+        stream << "Frequences des angles dihedres," << "nombres\n";
         for (auto& x: dihedral_freq) {
             qDebug() << x.first << "," << x.second;
             if(x.second > 0)
@@ -52,6 +53,18 @@ void MainWindow::export_csv(){
 
     my_dihedral.close();
 
+    /** Ecart Angulaire **/
+    path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/ecartAngulaire.csv";
+    QFile my_ecart(path);
+
+    if(my_ecart.open(QFile::WriteOnly|QFile::Truncate)){
+        QTextStream stream(&my_ecart);
+        stream << "Ecart angulaire," << "nombres\n";
+        for(auto& x: ecart_angulaire) {
+            qDebug() << x.first << "," << x.second;
+            if(x.second > 0) stream << x.first << "," << x.second << "\n";
+        }
+    }
 }
 
 
@@ -107,7 +120,7 @@ uint * MainWindow::valence(MyMesh* _mesh)
             max=valences[i];
         }
     }
-    uint nb_sommets_valence[max]; //nombre de sommets ayant la valence comme indice
+    uint* nb_sommets_valence = new uint[max]; //nombre de sommets ayant la valence comme indice
     for(int i = 0; i < cpt ; i++)
     {
         nb_sommets_valence[valences[i]] += 1;
@@ -122,7 +135,7 @@ std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
     MyMesh::Scalar maxArea = 0;
 
     for (MyMesh::FaceIter curFace = _mesh->faces_begin(); curFace != _mesh->faces_end(); curFace++) {
-        FaceHandle fh = curFace;
+        FaceHandle fh = *curFace;
         HalfedgeHandle heh = _mesh->halfedge_handle(fh);
         MyMesh::Scalar s = _mesh->calc_sector_area(heh);
         faces_area.push_back(s);
@@ -173,7 +186,7 @@ std::map<MyMesh::Scalar, int> MainWindow::dihedral_angles(MyMesh *_mesh){
 
     // On recupere la valeur des angles diedre
     for(MyMesh::EdgeIter curEdge = _mesh->edges_begin(); curEdge != _mesh->edges_end(); curEdge++){
-        EdgeHandle eh = curEdge;
+        EdgeHandle eh = *curEdge;
         if(!_mesh->is_boundary(eh)){
             MyMesh::Scalar s_rad = _mesh->calc_dihedral_angle(eh);
             MyMesh::Scalar s_deg = (s_rad*180)/pi;
@@ -275,6 +288,43 @@ void MainWindow::ecart_angulaire(MyMesh* _mesh){
         }
         _mesh->data(*v_it).value = current_angle;
     }
+}
+
+std::map<MyMesh::Scalar, int> MainWindow::ecart_ang(MyMesh* _mesh){
+    qDebug() << __FUNCTION__;
+    std::vector<MyMesh::Scalar> ecart_sommet;
+    std::map<MyMesh::Scalar, int> ecart_ang;
+    bool found_in_map = false;
+
+    // On recupere la valeur de l'ecart angulaire pour chaque sommet.
+    for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it) {
+        MyMesh::Scalar current_angle = 0.0;
+        MyMesh::Normal face_normal;
+        MyMesh::Normal vertex_normal = _mesh->calc_vertex_normal(*v_it);
+        for(MyMesh::VertexFaceIter vf_it = _mesh->vf_iter(*v_it); vf_it.is_valid(); ++vf_it){
+            face_normal = _mesh->calc_face_normal(*vf_it);
+            float norm_Vertex_Normal = sqrt(pow(vertex_normal[0],2) + pow(vertex_normal[1],2) + pow(vertex_normal[2],2));
+            float norm_Face_Normal = sqrt(pow(face_normal[0],2) + pow(face_normal[1],2) + pow(face_normal[2],2));
+            float prod_scalaire = dot(vertex_normal,face_normal);
+            float new_angle = acos(prod_scalaire/(norm_Vertex_Normal*norm_Face_Normal));
+            if(new_angle > current_angle) current_angle = new_angle;
+        }
+
+
+//        _mesh->data(*v_it).value = current_angle;
+        ecart_sommet.push_back(current_angle);
+    }
+
+    for(int i = 0; i < (int)_mesh->n_vertices(); i++){
+        MyMesh::Scalar cle = (int)(ecart_sommet[i]*180/M_PI);
+        ecart_ang[cle] = 0;
+    }
+
+    for(int i = 0; i < (int)_mesh->n_vertices(); i++){
+        MyMesh::Scalar cle = (int)(ecart_sommet[i]*180/M_PI);
+        ecart_ang[cle] += 1;
+    }
+    return ecart_ang;
 }
 
 int MainWindow::nb_faces_isole(MyMesh* _mesh){
