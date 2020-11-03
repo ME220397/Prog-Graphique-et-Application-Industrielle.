@@ -57,7 +57,7 @@ void MainWindow::export_csv(){
 
     if(my_valence.open(QFile::WriteOnly|QFile::Truncate)){
         QTextStream stream(&my_valence);
-        stream << "Frequences des valences," << "nombres\n";
+        stream << "Valences," << "Occurences\n";
         for (auto& x: valence_freq) {
             qDebug() << x.first << "," << x.second;
             if(x.second > 0)
@@ -105,8 +105,12 @@ std::map<uint, int> MainWindow::valence(MyMesh* _mesh)
 {
     int nb_sommets = _mesh->n_vertices();
     uint valences[nb_sommets];
+    for (int i = 0; i<nb_sommets; i++)
+    {
+        valences[i] = 0;
+    }
     int cpt = 0;
-    uint max = 0;
+    //uint max = 0;
 
     for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it)
     {
@@ -114,14 +118,13 @@ std::map<uint, int> MainWindow::valence(MyMesh* _mesh)
         valences[cpt] += _mesh->valence(vh);
         ++cpt;
     }
-    for (int i = 0; i < cpt ; i++)//vérifier si c est cpt ou cpt+1
-    {
-        if(valences[i] > max)
-        {
-            max=valences[i];
-        }
-    }
+
     std::map<uint, int> nb_sommets_valence; //nombre de sommets ayant la valence comme indice
+    for(int i = 0; i < cpt ; i++)
+    {
+        nb_sommets_valence[valences[i]] = 0;
+    }
+
     for(int i = 0; i < cpt ; i++)
     {
         nb_sommets_valence[valences[i]] += 1;
