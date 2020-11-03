@@ -46,7 +46,7 @@ public:
     bool onlyTriangles(MyMesh* _mesh);
     // Fonction de Leo
     MyMesh::Point centre_gravite(MyMesh* _mesh);
-    void boite_englobante(MyMesh* _mesh);
+    MyMesh boite_englobante(MyMesh* _mesh);
     uint * valence(MyMesh* _mesh);
     // Fonction de Elias
     bool is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh::Scalar marginOfError);
@@ -54,6 +54,7 @@ public:
     std::map<MyMesh::Scalar, int> area_frequency(MyMesh* _mesh);
     std::map<MyMesh::Scalar, int> dihedral_angles(MyMesh* _mesh);
     void export_csv();
+    void displayBox(MyMesh * _mesh, DisplayMode mode = DisplayMode::Normal);
     // Fonctions de thomas
     bool test_lonely_face(MyMesh* _mesh);
     bool test_lonely_vertex(MyMesh* _mesh);
@@ -84,6 +85,8 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_BoundingBox_clicked();
+
 private:
 
     bool modevoisinage;
@@ -93,6 +96,8 @@ private:
     int vertexSelection;
     int edgeSelection;
     int faceSelection;
+
+    bool showBox = false;
 
     Ui::MainWindow *ui;
 };

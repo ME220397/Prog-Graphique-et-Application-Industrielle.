@@ -54,11 +54,128 @@ void MainWindow::export_csv(){
 
 }
 
+MyMesh createBox(MyMesh::Point min, MyMesh::Point max){
+    MyMesh box;
 
-void MainWindow::boite_englobante(MyMesh* _mesh)
+    MyMesh::VertexHandle vhandle[8];
+    qDebug() << "min : (" << min[0] << ", " << min[1] << ", " << min[2] << ")" << "\n";
+    qDebug() << "max : (" << max[0] << ", " << max[1] << ", " << max[2] << ")" << "\n";
+
+    vhandle[0] = box.add_vertex(MyMesh::Point(min[0], min[1], max[2])); // -1 -1 1
+    vhandle[1] = box.add_vertex(MyMesh::Point(max[0], min[1], max[2])); // 1 -1 1
+    vhandle[2] = box.add_vertex(max); // 1 1 1
+    vhandle[3] = box.add_vertex(MyMesh::Point(min[0], max[1], max[2])); // -1 1 1
+    vhandle[4] = box.add_vertex(min); // -1 -1 -1
+    vhandle[5] = box.add_vertex(MyMesh::Point(max[0], min[1], min[2])); // 1 -1 -1
+    vhandle[6] = box.add_vertex(MyMesh::Point(max[0], max[1], min[2])); // 1 1 -1
+    vhandle[7] = box.add_vertex(MyMesh::Point(min[0], max[1], min[2])); // -1 1 -1
+
+    std::vector<MyMesh::VertexHandle>  face_vhandles;
+
+    // face 0 1 2
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[0]);
+    face_vhandles.push_back(vhandle[1]);
+    face_vhandles.push_back(vhandle[2]);
+    box.add_face(face_vhandles);
+
+    // face 2 3 0
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[2]);
+    face_vhandles.push_back(vhandle[3]);
+    face_vhandles.push_back(vhandle[0]);
+    box.add_face(face_vhandles);
+
+    // face 7 6 5
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[7]);
+    face_vhandles.push_back(vhandle[6]);
+    face_vhandles.push_back(vhandle[5]);
+    box.add_face(face_vhandles);
+
+    // face 5 4 7
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[5]);
+    face_vhandles.push_back(vhandle[4]);
+    face_vhandles.push_back(vhandle[7]);
+    box.add_face(face_vhandles);
+
+    // face 1 0 4
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[1]);
+    face_vhandles.push_back(vhandle[0]);
+    face_vhandles.push_back(vhandle[4]);
+    box.add_face(face_vhandles);
+
+    // face 4 5 1
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[4]);
+    face_vhandles.push_back(vhandle[5]);
+    face_vhandles.push_back(vhandle[1]);
+    box.add_face(face_vhandles);
+
+    // face 2 1 5
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[2]);
+    face_vhandles.push_back(vhandle[1]);
+    face_vhandles.push_back(vhandle[5]);
+    box.add_face(face_vhandles);
+
+    // face 5 6 2
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[5]);
+    face_vhandles.push_back(vhandle[6]);
+    face_vhandles.push_back(vhandle[2]);
+    box.add_face(face_vhandles);
+
+    // face 3 2 6
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[3]);
+    face_vhandles.push_back(vhandle[2]);
+    face_vhandles.push_back(vhandle[6]);
+    box.add_face(face_vhandles);
+
+    // face 6 7 3
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[6]);
+    face_vhandles.push_back(vhandle[7]);
+    face_vhandles.push_back(vhandle[3]);
+    box.add_face(face_vhandles);
+
+    // face 0 3 7
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[0]);
+    face_vhandles.push_back(vhandle[3]);
+    face_vhandles.push_back(vhandle[7]);
+    box.add_face(face_vhandles);
+
+    // face 7 4 0
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[7]);
+    face_vhandles.push_back(vhandle[4]);
+    face_vhandles.push_back(vhandle[0]);
+    box.add_face(face_vhandles);
+
+    // write mesh to output.obj
+    try
+    {
+        if ( !OpenMesh::IO::write_mesh(box, "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./box.obj"))
+        {
+          qDebug() << "Cannot write mesh to file 'output.off'" << "\n";
+        }
+    }
+    catch( std::exception& x )
+    {
+        qDebug() << x.what() << "\n";
+    }
+    return box;
+
+}
+
+MyMesh MainWindow::boite_englobante(MyMesh* _mesh)
 {
-    MyMesh::Point  max_coord;
-    MyMesh::Point  min_coord;
+    MyMesh::Point  max_coord = MyMesh::Point(0, 0, 0);
+    MyMesh::Point  min_coord = MyMesh::Point(100000000, 10000000, 10000000);
     for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it)
     {
         VertexHandle vh = v_it;
@@ -72,18 +189,30 @@ void MainWindow::boite_englobante(MyMesh* _mesh)
         if(max_coord[2] < p[2]){
             max_coord[2] = p[2];
         }
-        if(min_coord[0] < p[0]){
+        if(min_coord[0] > p[0]){
             min_coord[0] = p[0];
         }
-        if(min_coord[1] < p[1]){
+        if(min_coord[1] > p[1]){
             min_coord[1] = p[1];
         }
-        if(min_coord[2] < p[2]){
+        if(min_coord[2] > p[2]){
             min_coord[2] = p[2];
         }
     }
+    MyMesh box = createBox(min_coord, max_coord);
 
+    for(MyMesh::EdgeIter curEdge = box.edges_begin(); curEdge != box.edges_end(); curEdge++){
+        EdgeHandle eh = curEdge;
+        box.set_color(eh, MyMesh::Color(255, 0, 0));
+        box.data(eh).thickness += 5;
+    }
 
+    for(MyMesh::FaceIter curFace = box.faces_begin(); curFace != box.faces_end(); curFace++){
+        FaceHandle fh = curFace;
+        box.set_color(fh, MyMesh::Color(150, 150, 150));
+    }
+
+    return box;
 }
 
 
@@ -377,6 +506,7 @@ void MainWindow::on_pushButton_angleArea_clicked()
 
 void MainWindow::on_pushButton_chargement_clicked()
 {
+    showBox = false;
     // fenêtre de sélection des fichiers
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Mesh"), "", tr("Mesh Files (*.obj)"));
 
@@ -415,9 +545,7 @@ void MainWindow::resetAllColorsAndThickness(MyMesh* _mesh)
     }
 }
 
-// charge un objet MyMesh dans l'environnement OpenGL
-void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
-{
+void MainWindow::displayBox(MyMesh * _mesh, DisplayMode mode){
     GLuint* triIndiceArray = new GLuint[_mesh->n_faces() * 3];
     GLfloat* triCols = new GLfloat[_mesh->n_faces() * 3 * 3];
     GLfloat* triVerts = new GLfloat[_mesh->n_faces() * 3 * 3];
@@ -439,7 +567,12 @@ void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
         for (; fIt!=fEnd; ++fIt)
         {
             fvIt = _mesh->cfv_iter(*fIt);
-            if(_mesh->data(*fvIt).value > 0){triCols[3*i+0] = 255; triCols[3*i+1] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+2] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
+            if(_mesh->data(*fvIt).value > 0){
+
+                triCols[3*i+0] = 255;
+                triCols[3*i+1] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);
+                triCols[3*i+2] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);
+            }
             else{triCols[3*i+2] = 255; triCols[3*i+1] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+0] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
             triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
             triIndiceArray[i] = i;
@@ -460,7 +593,7 @@ void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
         }
     }
 
-    if(mode == DisplayMode::Normal)
+    if(mode == DisplayMode::Normal && showBox == false)
     {
         MyMesh::ConstFaceIter fIt(_mesh->faces_begin()), fEnd(_mesh->faces_end());
         MyMesh::ConstFaceVertexIter fvIt;
@@ -510,6 +643,226 @@ void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
         }
     }
 
+    ui->displayWidget->loadMesh(triVerts, triCols, _mesh->n_faces() * 3 * 3, triIndiceArray, _mesh->n_faces() * 3);
+
+    delete[] triIndiceArray;
+    delete[] triCols;
+    delete[] triVerts;
+
+    GLuint* linesIndiceArray = new GLuint[_mesh->n_edges() * 2];
+    GLfloat* linesCols = new GLfloat[_mesh->n_edges() * 2 * 3];
+    GLfloat* linesVerts = new GLfloat[_mesh->n_edges() * 2 * 3];
+
+    i = 0;
+    QHash<float, QList<int> > edgesIDbyThickness;
+    for (MyMesh::EdgeIter eit = _mesh->edges_begin(); eit != _mesh->edges_end(); ++eit)
+    {
+        float t = _mesh->data(*eit).thickness;
+        if(t > 0)
+        {
+            if(!edgesIDbyThickness.contains(t))
+                edgesIDbyThickness[t] = QList<int>();
+            edgesIDbyThickness[t].append((*eit).idx());
+        }
+    }
+    QHashIterator<float, QList<int> > it(edgesIDbyThickness);
+    QList<QPair<float, int> > edgeSizes;
+    while (it.hasNext())
+    {
+        it.next();
+
+        for(int e = 0; e < it.value().size(); e++)
+        {
+            int eidx = it.value().at(e);
+
+            MyMesh::VertexHandle vh1 = _mesh->to_vertex_handle(_mesh->halfedge_handle(_mesh->edge_handle(eidx), 0));
+            linesVerts[3*i+0] = _mesh->point(vh1)[0];
+            linesVerts[3*i+1] = _mesh->point(vh1)[1];
+            linesVerts[3*i+2] = _mesh->point(vh1)[2];
+            linesCols[3*i+0] = _mesh->color(_mesh->edge_handle(eidx))[0];
+            linesCols[3*i+1] = _mesh->color(_mesh->edge_handle(eidx))[1];
+            linesCols[3*i+2] = _mesh->color(_mesh->edge_handle(eidx))[2];
+            linesIndiceArray[i] = i;
+            i++;
+
+            MyMesh::VertexHandle vh2 = _mesh->from_vertex_handle(_mesh->halfedge_handle(_mesh->edge_handle(eidx), 0));
+            linesVerts[3*i+0] = _mesh->point(vh2)[0];
+            linesVerts[3*i+1] = _mesh->point(vh2)[1];
+            linesVerts[3*i+2] = _mesh->point(vh2)[2];
+            linesCols[3*i+0] = _mesh->color(_mesh->edge_handle(eidx))[0];
+            linesCols[3*i+1] = _mesh->color(_mesh->edge_handle(eidx))[1];
+            linesCols[3*i+2] = _mesh->color(_mesh->edge_handle(eidx))[2];
+            linesIndiceArray[i] = i;
+            i++;
+        }
+        edgeSizes.append(qMakePair(it.key(), it.value().size()));
+    }
+
+    ui->displayWidget->loadLines(linesVerts, linesCols, i * 3, linesIndiceArray, i, edgeSizes);
+
+    delete[] linesIndiceArray;
+    delete[] linesCols;
+    delete[] linesVerts;
+
+    GLuint* pointsIndiceArray = new GLuint[_mesh->n_vertices()];
+    GLfloat* pointsCols = new GLfloat[_mesh->n_vertices() * 3];
+    GLfloat* pointsVerts = new GLfloat[_mesh->n_vertices() * 3];
+
+    i = 0;
+    QHash<float, QList<int> > vertsIDbyThickness;
+    for (MyMesh::VertexIter vit = _mesh->vertices_begin(); vit != _mesh->vertices_end(); ++vit)
+    {
+        float t = _mesh->data(*vit).thickness;
+        if(t > 0)
+        {
+            if(!vertsIDbyThickness.contains(t))
+                vertsIDbyThickness[t] = QList<int>();
+            vertsIDbyThickness[t].append((*vit).idx());
+        }
+    }
+    QHashIterator<float, QList<int> > vitt(vertsIDbyThickness);
+    QList<QPair<float, int> > vertsSizes;
+
+    while (vitt.hasNext())
+    {
+        vitt.next();
+
+        for(int v = 0; v < vitt.value().size(); v++)
+        {
+            int vidx = vitt.value().at(v);
+
+            pointsVerts[3*i+0] = _mesh->point(_mesh->vertex_handle(vidx))[0];
+            pointsVerts[3*i+1] = _mesh->point(_mesh->vertex_handle(vidx))[1];
+            pointsVerts[3*i+2] = _mesh->point(_mesh->vertex_handle(vidx))[2];
+            pointsCols[3*i+0] = _mesh->color(_mesh->vertex_handle(vidx))[0];
+            pointsCols[3*i+1] = _mesh->color(_mesh->vertex_handle(vidx))[1];
+            pointsCols[3*i+2] = _mesh->color(_mesh->vertex_handle(vidx))[2];
+            pointsIndiceArray[i] = i;
+            i++;
+        }
+        vertsSizes.append(qMakePair(vitt.key(), vitt.value().size()));
+    }
+
+    ui->displayWidget->loadPoints(pointsVerts, pointsCols, i * 3, pointsIndiceArray, i, vertsSizes);
+
+    delete[] pointsIndiceArray;
+    delete[] pointsCols;
+    delete[] pointsVerts;
+}
+
+// charge un objet MyMesh dans l'environnement OpenGL
+void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
+{
+
+    /*if(showBox == true){
+        MyMesh box = boite_englobante(_mesh);
+        for(MyMesh::VertexIter curVert = box.vertices_begin(); curVert != box.vertices_end(); curVert++){
+            VertexHandle vh = curVert;
+            _mesh->add_vertex(box.point(vh));
+        }
+
+        for(MyMesh::EdgeIter curEdge = box.edges_begin(); curEdge != box.edges_end(); curEdge++){
+            EdgeHandle eh = curEdge;
+
+        }
+    }*/
+
+    GLuint* triIndiceArray = new GLuint[_mesh->n_faces() * 3];
+    GLfloat* triCols = new GLfloat[_mesh->n_faces() * 3 * 3];
+    GLfloat* triVerts = new GLfloat[_mesh->n_faces() * 3 * 3];
+
+    int i = 0;
+
+    if(mode == DisplayMode::TemperatureMap)
+    {
+        QVector<float> values;
+        for (MyMesh::VertexIter curVert = _mesh->vertices_begin(); curVert != _mesh->vertices_end(); curVert++)
+            values.append(fabs(_mesh->data(*curVert).value));
+        qSort(values);
+
+        float range = values.at(values.size()*0.8);
+
+        MyMesh::ConstFaceIter fIt(_mesh->faces_begin()), fEnd(_mesh->faces_end());
+        MyMesh::ConstFaceVertexIter fvIt;
+
+        for (; fIt!=fEnd; ++fIt)
+        {
+            fvIt = _mesh->cfv_iter(*fIt);
+            if(_mesh->data(*fvIt).value > 0){
+
+                triCols[3*i+0] = 255;
+                triCols[3*i+1] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);
+                triCols[3*i+2] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);
+            }
+            else{triCols[3*i+2] = 255; triCols[3*i+1] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+0] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++; ++fvIt;
+            if(_mesh->data(*fvIt).value > 0){triCols[3*i+0] = 255; triCols[3*i+1] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+2] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
+            else{triCols[3*i+2] = 255; triCols[3*i+1] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+0] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++; ++fvIt;
+            if(_mesh->data(*fvIt).value > 0){triCols[3*i+0] = 255; triCols[3*i+1] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+2] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
+            else{triCols[3*i+2] = 255; triCols[3*i+1] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+0] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++;
+        }
+    }
+
+    if(mode == DisplayMode::Normal && showBox == false)
+    {
+        MyMesh::ConstFaceIter fIt(_mesh->faces_begin()), fEnd(_mesh->faces_end());
+        MyMesh::ConstFaceVertexIter fvIt;
+        for (; fIt!=fEnd; ++fIt)
+        {
+            fvIt = _mesh->cfv_iter(*fIt);
+            triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++; ++fvIt;
+            triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++; ++fvIt;
+            triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++;
+        }
+    }
+
+    if(mode == DisplayMode::ColorShading)
+    {
+        MyMesh::ConstFaceIter fIt(_mesh->faces_begin()), fEnd(_mesh->faces_end());
+        MyMesh::ConstFaceVertexIter fvIt;
+        for (; fIt!=fEnd; ++fIt)
+        {
+            fvIt = _mesh->cfv_iter(*fIt);
+            triCols[3*i+0] = _mesh->data(*fvIt).faceShadingColor[0]; triCols[3*i+1] = _mesh->data(*fvIt).faceShadingColor[1]; triCols[3*i+2] = _mesh->data(*fvIt).faceShadingColor[2];
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++; ++fvIt;
+            triCols[3*i+0] = _mesh->data(*fvIt).faceShadingColor[0]; triCols[3*i+1] = _mesh->data(*fvIt).faceShadingColor[1]; triCols[3*i+2] = _mesh->data(*fvIt).faceShadingColor[2];
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++; ++fvIt;
+            triCols[3*i+0] = _mesh->data(*fvIt).faceShadingColor[0]; triCols[3*i+1] = _mesh->data(*fvIt).faceShadingColor[1]; triCols[3*i+2] = _mesh->data(*fvIt).faceShadingColor[2];
+            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+            triIndiceArray[i] = i;
+
+            i++;
+        }
+    }
 
     ui->displayWidget->loadMesh(triVerts, triCols, _mesh->n_faces() * 3 * 3, triIndiceArray, _mesh->n_faces() * 3);
 
@@ -638,4 +991,15 @@ MainWindow::~MainWindow()
 void MainWindow::on_pushButton_clicked()
 {
     export_csv();
+}
+
+void MainWindow::on_BoundingBox_clicked()
+{
+    if(showBox == false){
+        showBox = true;
+    }
+    else
+        showBox = false;
+    boite_englobante(&mesh);
+    //displayMesh(&mesh);
 }
