@@ -364,6 +364,192 @@ int MainWindow::nb_aretes_isole(MyMesh* _mesh){
     return nb_aretes_seules;
 }
 
+float MainWindow::Ai(MyMesh* _mesh, int vertexId){
+    float aire = 0;
+
+    VertexHandle currentvertex = _mesh->vertex_handle(vertexId);
+
+    for(MyMesh::VertexFaceIter vf_it = _mesh->vf_iter(currentvertex); vf_it.is_valid(); ++vf_it){
+        FaceHandle fh = *vf_it;
+        HalfedgeHandle he = _mesh->halfedge_handle(fh);
+        aire += _mesh->calc_sector_area(he);
+    }
+
+    return aire/3;
+}
+
+float MainWindow::angleFF(MyMesh *_mesh, int faceID0, int faceID1, int vertID0, int vertID1){
+    float angle;
+
+    _mesh->request_vertex_status();
+    _mesh->request_edge_status();
+    _mesh->request_face_status();
+
+    /*get the faces*/
+    MyMesh::FaceHandle *f0 = new FaceHandle(faceID0);
+    MyMesh::FaceHandle *f1 = new FaceHandle(faceID1);
+
+    /*calcul the normal faces*/
+    MyMesh::Normal n0 = _mesh->calc_face_normal(*f0);
+    MyMesh::Normal n1 = _mesh->calc_face_normal(*f1);
+    float Norm_n0 = sqrt(pow(n0[0],2) + pow(n0[1],2) + pow(n0[2],2));
+    float Norm_n1 = sqrt(pow(n1[0],2) + pow(n1[1],2) + pow(n1[2],2));
+    float dot_n0_n1 = dot(n0,n1);
+
+    /*u.v = ||u|| . ||v|| . cos(alpha)*/
+    angle = acos(dot_n0_n1/(Norm_n0*Norm_n1));
+
+    /*get the vertices*/
+    VertexHandle *v0 = new VertexHandle(vertID0);
+    VertexHandle *v1 = new VertexHandle(vertID1);
+
+    /*make points from vertices to get coords (x, y, z)*/
+    MyMesh::Point point0 = _mesh->point(*v0);
+    MyMesh::Point point1 = _mesh->point(*v1);
+
+    /* calcul the vector point0 -> point1 */
+    double *vector =new double(3);
+    vector[0] = point1[0] - point0[0];
+    vector[1] = point1[1] - point0[1];
+    vector[2] = point1[2] - point0[2];
+
+    /*cross product between the two normals*/
+    double *cross_product = new double(3);
+    cross_product[0] = n0[1]*n1[2] - n0[2]*n1[1];
+    cross_product[1] = n0[2]*n1[0] - n0[0]*n1[2];
+    cross_product[2] = n0[0]*n1[1] - n0[1]*n1[0];
+
+    float cpx = cross_product[0];
+    float cpy = cross_product[1];
+    float cpz = cross_product[2];
+
+    float vx = vector[0];
+    float vy = vector[1];
+    float vz = vector[2];
+
+    /*dot product entre les deux vecteurs pour avoir le signe de l'angle*/
+    float dot_prod = cpx*vx + cpy*vy + cpz*vz;
+
+    if(0 < dot_prod)
+        return angle;
+    else
+        return -angle;
+}
+
+
+float MainWindow::angleEE(MyMesh* _mesh, int vertexID, int faceID){
+    //Seulement besoin des deux points opposé a celui qu'on donne en entre de la fonction.
+        float *x = new float[2];
+        float *y = new float[2];
+        float *z = new float[2];
+        int cmpt=0;
+
+        MyMesh::FaceHandle *f = new FaceHandle(faceID);
+
+        VertexHandle baseVertex = _mesh->vertex_handle(vertexID);
+
+        for (MyMesh::FaceVertexIter curVert = _mesh->fv_iter(*f); curVert.is_valid(); curVert ++)
+        {
+
+            VertexHandle vh = *curVert;
+
+
+            if( vh == _mesh->vertex_handle(vertexID)) continue;
+            else{
+                x[cmpt] = _mesh->point(vh)[0];
+                y[cmpt] = _mesh->point(vh)[1];
+                z[cmpt] = _mesh->point(vh)[2];
+                cmpt++;
+            }
+        }
+
+        float *v1 = new float[3];
+        float *v2 = new float[3];
+
+        v1[0] = x[0] - _mesh->point(baseVertex)[0];
+        v1[1] = y[0] - _mesh->point(baseVertex)[1];
+        v1[2] = z[0] - _mesh->point(baseVertex)[2];
+
+        v2[0] = x[1] - _mesh->point(baseVertex)[0];
+        v2[1] = y[1] - _mesh->point(baseVertex)[1];
+        v2[2] = z[1] - _mesh->point(baseVertex)[2];
+
+        float prod = 0;
+        for(int i = 0 ; i<3; i++){
+            prod += v1[i] * v2[i];
+        }
+        float norv1 = sqrt(pow(v1[0],2)+pow(v1[1],2)+pow(v1[2],2));
+        float norv2 = sqrt(pow(v2[0],2)+pow(v2[1],2)+pow(v2[2],2));
+
+        float costet = prod/(norv1*norv2);
+        float angle = acos(costet);
+
+        return abs(angle);
+}
+
+void MainWindow::H_Curv(MyMesh* _mesh)
+{
+    float hCurv;
+    float aire_bari;
+    float somme;
+    QList<float> longueurs;
+    QList<float> angles;
+
+    for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); v_it++){
+
+        VertexHandle currentVertex = *v_it;
+        hCurv=0;
+        aire_bari=0;
+
+        aire_bari = Ai(_mesh, currentVertex.idx());
+
+        for(MyMesh::VertexVertexCWIter vv_cwiter = _mesh->vv_cwiter(currentVertex); vv_cwiter.is_valid(); vv_cwiter++){
+
+            VertexHandle vertex = *vv_cwiter;
+            HalfedgeHandle heh = _mesh->halfedge_handle(vertex);
+            longueurs.push_back(_mesh->calc_edge_length(heh));
+
+            FaceHandle f0 = _mesh->face_handle(heh);
+            FaceHandle f1 = _mesh->face_handle(_mesh->opposite_halfedge_handle(heh));
+            angles.push_back(angleFF(_mesh, f0.idx(), f1.idx(), currentVertex.idx(), vertex.idx()));
+
+        }
+
+        somme = 0;
+        for(int i=0; i<longueurs.length(); i++){
+            somme += angles[i] * longueurs[i];
+        }
+
+        float x = 1/(4*aire_bari);
+        hCurv = x * somme;
+
+        longueurs.clear();
+        angles.clear();
+
+        _mesh->data(currentVertex).value = hCurv;
+    }
+}
+
+void MainWindow::K_Curv(MyMesh* _mesh)
+{
+    float kCurv;
+    float angle;
+
+    for (MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it!=_mesh->vertices_end(); v_it++)
+        {
+            VertexHandle vh = *v_it;
+            kCurv = 0;
+            angle = 0;
+            for(MyMesh::VertexFaceIter  vf_it = _mesh->vf_iter(vh); vf_it; ++vf_it) {
+                    FaceHandle fh = *vf_it;
+                    angle += angleEE(_mesh, vh.idx(), fh.idx());
+            }
+
+            kCurv = (1/Ai(_mesh, vh.idx())) * ( 2*M_PI -  angle);
+            _mesh->data(vh).value = kCurv;
+        }
+}
+
 /* **** fin de la partie à compléter **** */
 
 /* **** début de la partie boutons et IHM **** */
@@ -396,14 +582,14 @@ void MainWindow::on_pushButton_ecart_angulaire_clicked(){
 
 void MainWindow::on_pushButton_H_clicked()
 {
-//    H_Curv(&mesh);
-//    displayMesh(&mesh, DisplayMode::TemperatureMap); // permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
+    H_Curv(&mesh);
+    displayMesh(&mesh, DisplayMode::TemperatureMap); // permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
 }
 
 void MainWindow::on_pushButton_K_clicked()
 {
-//    K_Curv(&mesh);
-//    displayMesh(&mesh, DisplayMode::TemperatureMap); // permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
+    K_Curv(&mesh);
+    displayMesh(&mesh, DisplayMode::TemperatureMap); // permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
 }
 
 /*  Cette fonction est à utiliser UNIQUEMENT avec le fichier testAngleArea.obj

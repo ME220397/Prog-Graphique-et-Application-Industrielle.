@@ -55,6 +55,13 @@ public:
     std::map<MyMesh::Scalar, int> dihedral_angles(MyMesh* _mesh);
     void export_csv();
     // Fonctions de thomas
+    float faceArea(MyMesh* _mesh, int faceID);
+    float Ai(MyMesh* _mesh, int vertexID);
+    float angleFF(MyMesh *_mesh, int faceID0, int faceID1, int vertID0, int vertID1);
+    float angleEE(MyMesh* _mesh, int vertexID, int faceID);
+    void H_Curv(MyMesh* _mesh);
+    void K_Curv(MyMesh* _mesh);
+
     bool test_lonely_face(MyMesh* _mesh);
     bool test_lonely_vertex(MyMesh* _mesh);
     bool test_lonely_edge(MyMesh* _mesh);
@@ -67,6 +74,7 @@ public:
     int nb_points_isole(MyMesh* _mesh);
     int nb_aretes_isole(MyMesh* _mesh);
     std::map<MyMesh::Scalar, int> ecart_ang(MyMesh* _mesh);
+
 
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);
     void resetAllColorsAndThickness(MyMesh* _mesh);
