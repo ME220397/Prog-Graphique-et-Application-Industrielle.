@@ -16,13 +16,12 @@ void MainWindow::get_carac(MyMesh* _mesh){
 void MainWindow::export_csv(){
     std::map<MyMesh::Scalar, int> area_freq = area_frequency(&mesh);
     std::map<MyMesh::Scalar, int> dihedral_freq = dihedral_angles(&mesh);
-   // std::map<uint, int> valence_freq = valence(&mesh);
-   // std::map<MyMesh::Scalar, int> ecart_angulaire = ecart_ang(&mesh);
-
+    std::map<uint, int> valence_freq = valence(&mesh);
+    std::map<MyMesh::Scalar, int> ecart_angulaire = ecart_ang(&mesh);
     /** Frequence des aires **/
     // chemin à changer selon votre systeme
     // Elias = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
-    QString path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    QString path =  "./CSV/angledi.csv";
     //QString path = "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
     //QString path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
     QFile my_area(path);
@@ -41,7 +40,7 @@ void MainWindow::export_csv(){
     qDebug() << "CSV AREA WRITED !!";
 
     /** Angle dihedres **/
-    path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
     //path =  "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
     //path =  "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
     QFile my_dihedral(path);
@@ -57,7 +56,7 @@ void MainWindow::export_csv(){
     }
 
     /** Valences **/
-   /* path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
     //path =  "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/valence.csv";
     QFile my_valence(path);
 
@@ -70,9 +69,9 @@ void MainWindow::export_csv(){
                 stream << x.first << "," << x.second << "\n";
         }
     }
-    my_valence.close();*/
+    my_valence.close();
     /** Ecart Angulaire **/
-    /*path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
     //path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/ecartAngulaire.csv";
     QFile my_ecart(path);
 
@@ -83,7 +82,7 @@ void MainWindow::export_csv(){
             qDebug() << x.first << "," << x.second;
             if(x.second > 0) stream << x.first << "," << x.second << "\n";
         }
-    }*/
+    }
 }
 
 void createBox(MyMesh::Point min, MyMesh::Point max, MyMesh * _mesh){
@@ -244,7 +243,7 @@ void MainWindow::boite_englobante(MyMesh* _mesh)
     }*/
 }
 
-std::map<uint, int> MainWindow::valence(MyMesh* _mesh)
+std::map<uint,int> MainWindow::valence(MyMesh* _mesh)
 {
     int nb_sommets = _mesh->n_vertices();
     uint valences[nb_sommets];
@@ -267,7 +266,7 @@ std::map<uint, int> MainWindow::valence(MyMesh* _mesh)
     {
         nb_sommets_valence[valences[i]] = 0;
     }
-     //nombre de sommets ayant la valence comme indice
+
     for(int i = 0; i < cpt ; i++)
     {
         nb_sommets_valence[valences[i]] += 1;
@@ -768,6 +767,8 @@ void MainWindow::on_pushButton_chargement_clicked()
 {
     showBox = false;
     box_created = false;
+
+
     // fenêtre de sélection des fichiers
     fileName = QFileDialog::getOpenFileName(this, tr("Open Mesh"), "", tr("Mesh Files (*.obj)"));
 
@@ -778,7 +779,6 @@ void MainWindow::on_pushButton_chargement_clicked()
 
     // initialisation des couleurs et épaisseurs (sommets et arêtes) du mesh
     resetAllColorsAndThickness(&mesh);
-
     // on affiche le maillage
     displayMesh(&mesh);
 }
