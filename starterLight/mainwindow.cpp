@@ -16,11 +16,13 @@ void MainWindow::get_carac(MyMesh* _mesh){
 void MainWindow::export_csv(){
     std::map<MyMesh::Scalar, int> area_freq = area_frequency(&mesh);
     std::map<MyMesh::Scalar, int> dihedral_freq = dihedral_angles(&mesh);
+    std::map<uint, int> valence_freq = valence(&mesh);
 
     /** Frequence des aires **/
     // chemin à changer selon votre systeme
     // Elias = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
-    QString path = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
+    QString path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //QString path = "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
     QFile my_area(path);
 
     if(my_area.open(QFile::WriteOnly|QFile::Truncate)){
@@ -38,6 +40,7 @@ void MainWindow::export_csv(){
 
     /** Angle dihedres **/
     path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //path =  "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
     QFile my_dihedral(path);
 
     if(my_dihedral.open(QFile::WriteOnly|QFile::Truncate)){
@@ -50,7 +53,22 @@ void MainWindow::export_csv(){
         }
     }
 
-    my_dihedral.close();
+    /** Valences **/
+    path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //path =  "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/valence.csv";
+    QFile my_valence(path);
+
+    if(my_valence.open(QFile::WriteOnly|QFile::Truncate)){
+        QTextStream stream(&my_valence);
+        stream << "Valences," << "Occurences\n";
+        for (auto& x: valence_freq) {
+            qDebug() << x.first << "," << x.second;
+            if(x.second > 0)
+                stream << x.first << "," << x.second << "\n";
+        }
+    }
+
+    my_valence.close();
 
 }
 
@@ -212,13 +230,16 @@ void MainWindow::boite_englobante(MyMesh* _mesh)
     }*/
 }
 
-
-uint * MainWindow::valence(MyMesh* _mesh)
+std::map<uint, int> MainWindow::valence(MyMesh* _mesh)
 {
     int nb_sommets = _mesh->n_vertices();
     uint valences[nb_sommets];
+    for (int i = 0; i<nb_sommets; i++)
+    {
+        valences[i] = 0;
+    }
     int cpt = 0;
-    uint max = 0;
+    //uint max = 0;
 
     for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it)
     {
@@ -226,14 +247,13 @@ uint * MainWindow::valence(MyMesh* _mesh)
         valences[cpt] += _mesh->valence(vh);
         ++cpt;
     }
-    for (int i = 0; i < cpt ; i++)//vérifier si c est cpt ou cpt+1
+
+    std::map<uint, int> nb_sommets_valence; //nombre de sommets ayant la valence comme indice
+    for(int i = 0; i < cpt ; i++)
     {
-        if(valences[i] > max)
-        {
-            max=valences[i];
-        }
+        nb_sommets_valence[valences[i]] = 0;
     }
-    uint nb_sommets_valence[max]; //nombre de sommets ayant la valence comme indice
+
     for(int i = 0; i < cpt ; i++)
     {
         nb_sommets_valence[valences[i]] += 1;

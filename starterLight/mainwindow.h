@@ -50,7 +50,7 @@ public:
     // Fonction de Leo
     MyMesh::Point centre_gravite(MyMesh* _mesh);
     void boite_englobante(MyMesh* _mesh);
-    uint * valence(MyMesh* _mesh);
+    std::map<uint, int> valence(MyMesh* _mesh);
     // Fonction de Elias
     bool is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh::Scalar marginOfError);
     void show_vf_list(MyMesh* _mesh);
