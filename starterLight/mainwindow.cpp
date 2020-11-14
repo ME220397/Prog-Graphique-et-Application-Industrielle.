@@ -99,6 +99,17 @@ void MainWindow::boite_englobante(MyMesh* _mesh)
 
 }
 
+MyMesh::Point MainWindow::centre_gravite(MyMesh *_mesh){
+    MyMesh::Point centre_grav(0.0,0.0,0.0);
+    MyMesh::Point p;
+    for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it){
+        p = _mesh->point(*v_it);
+        centre_grav += p;
+    }
+    centre_grav /= _mesh->n_vertices();
+    qDebug() << "Centre de gravité 1 : " << centre_grav[0] << " " << centre_grav[1] << " " << centre_grav[2];
+    return centre_grav;
+}
 
 uint * MainWindow::valence(MyMesh* _mesh)
 {
@@ -560,7 +571,8 @@ void MainWindow::on_pushButton_Affiche_Carac_clicked(){
 
 void MainWindow::on_pushButton_normales_faces_clicked(){
 //    qDebug() << __FUNCTION__;
-    print_faces_norm(&mesh);
+//    print_faces_norm(&mesh);
+    centre_gravite(&mesh);
 }
 
 void MainWindow::on_pushButton_normales_points_clicked(){
