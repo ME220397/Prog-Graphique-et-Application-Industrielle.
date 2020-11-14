@@ -16,17 +16,19 @@ void MainWindow::get_carac(MyMesh* _mesh){
 void MainWindow::export_csv(){
     std::map<MyMesh::Scalar, int> area_freq = area_frequency(&mesh);
     std::map<MyMesh::Scalar, int> dihedral_freq = dihedral_angles(&mesh);
+    std::map<uint, int> valence_freq = valence(&mesh);
     std::map<MyMesh::Scalar, int> ecart_angulaire = ecart_ang(&mesh);
-
     /** Frequence des aires **/
     // chemin à changer selon votre systeme
     // Elias = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
-    QString path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
+    QString path =  "./CSV/angledi.csv";
+    //QString path = "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
+    //QString path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
     QFile my_area(path);
 
     if(my_area.open(QFile::WriteOnly|QFile::Truncate)){
         QTextStream stream(&my_area);
-        stream << "Frequences des aires," << "nombres faces\n";
+        stream << "Aires," << "nb faces\n";
         for (auto& x: area_freq) {
             qDebug() << x.first << "," << x.second;
             if(x.second > 0)
@@ -38,12 +40,14 @@ void MainWindow::export_csv(){
     qDebug() << "CSV AREA WRITED !!";
 
     /** Angle dihedres **/
-    path =  "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
+    //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //path =  "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
+    //path =  "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
     QFile my_dihedral(path);
 
     if(my_dihedral.open(QFile::WriteOnly|QFile::Truncate)){
         QTextStream stream(&my_dihedral);
-        stream << "Frequences des angles dihedres," << "nombres\n";
+        stream << "angles dihedres (degrés)," << "nb faces\n";
         for (auto& x: dihedral_freq) {
             qDebug() << x.first << "," << x.second;
             if(x.second > 0)
@@ -51,10 +55,24 @@ void MainWindow::export_csv(){
         }
     }
 
-    my_dihedral.close();
+    /** Valences **/
+    //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //path =  "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/valence.csv";
+    QFile my_valence(path);
 
+    if(my_valence.open(QFile::WriteOnly|QFile::Truncate)){
+        QTextStream stream(&my_valence);
+        stream << "Valences," << "Occurences\n";
+        for (auto& x: valence_freq) {
+            qDebug() << x.first << "," << x.second;
+            if(x.second > 0)
+                stream << x.first << "," << x.second << "\n";
+        }
+    }
+    my_valence.close();
     /** Ecart Angulaire **/
-    path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/ecartAngulaire.csv";
+    //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
+    //path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/ecartAngulaire.csv";
     QFile my_ecart(path);
 
     if(my_ecart.open(QFile::WriteOnly|QFile::Truncate)){
@@ -67,14 +85,115 @@ void MainWindow::export_csv(){
     }
 }
 
+void createBox(MyMesh::Point min, MyMesh::Point max, MyMesh * _mesh){
+
+    MyMesh::VertexHandle vhandle[8];
+    qDebug() << "min : (" << min[0] << ", " << min[1] << ", " << min[2] << ")" << "\n";
+    qDebug() << "max : (" << max[0] << ", " << max[1] << ", " << max[2] << ")" << "\n";
+
+    vhandle[0] = _mesh->add_vertex(MyMesh::Point(min[0], min[1], max[2])); // -1 -1 1
+    vhandle[1] = _mesh->add_vertex(MyMesh::Point(max[0], min[1], max[2])); // 1 -1 1
+    vhandle[2] = _mesh->add_vertex(max); // 1 1 1
+    vhandle[3] = _mesh->add_vertex(MyMesh::Point(min[0], max[1], max[2])); // -1 1 1
+    vhandle[4] = _mesh->add_vertex(min); // -1 -1 -1
+    vhandle[5] = _mesh->add_vertex(MyMesh::Point(max[0], min[1], min[2])); // 1 -1 -1
+    vhandle[6] = _mesh->add_vertex(MyMesh::Point(max[0], max[1], min[2])); // 1 1 -1
+    vhandle[7] = _mesh->add_vertex(MyMesh::Point(min[0], max[1], min[2])); // -1 1 -1
+
+    std::vector<MyMesh::VertexHandle>  face_vhandles;
+
+    // face 0 1 2
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[0]);
+    face_vhandles.push_back(vhandle[1]);
+    face_vhandles.push_back(vhandle[2]);
+    _mesh->add_face(face_vhandles);
+
+    // face 2 3 0
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[2]);
+    face_vhandles.push_back(vhandle[3]);
+    face_vhandles.push_back(vhandle[0]);
+    _mesh->add_face(face_vhandles);
+
+    // face 7 6 5
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[7]);
+    face_vhandles.push_back(vhandle[6]);
+    face_vhandles.push_back(vhandle[5]);
+    _mesh->add_face(face_vhandles);
+
+    // face 5 4 7
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[5]);
+    face_vhandles.push_back(vhandle[4]);
+    face_vhandles.push_back(vhandle[7]);
+    _mesh->add_face(face_vhandles);
+
+    // face 1 0 4
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[1]);
+    face_vhandles.push_back(vhandle[0]);
+    face_vhandles.push_back(vhandle[4]);
+    _mesh->add_face(face_vhandles);
+
+    // face 4 5 1
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[4]);
+    face_vhandles.push_back(vhandle[5]);
+    face_vhandles.push_back(vhandle[1]);
+    _mesh->add_face(face_vhandles);
+
+    // face 2 1 5
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[2]);
+    face_vhandles.push_back(vhandle[1]);
+    face_vhandles.push_back(vhandle[5]);
+    _mesh->add_face(face_vhandles);
+
+    // face 5 6 2
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[5]);
+    face_vhandles.push_back(vhandle[6]);
+    face_vhandles.push_back(vhandle[2]);
+    _mesh->add_face(face_vhandles);
+
+    // face 3 2 6
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[3]);
+    face_vhandles.push_back(vhandle[2]);
+    face_vhandles.push_back(vhandle[6]);
+    _mesh->add_face(face_vhandles);
+
+    // face 6 7 3
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[6]);
+    face_vhandles.push_back(vhandle[7]);
+    face_vhandles.push_back(vhandle[3]);
+    _mesh->add_face(face_vhandles);
+
+    // face 0 3 7
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[0]);
+    face_vhandles.push_back(vhandle[3]);
+    face_vhandles.push_back(vhandle[7]);
+    _mesh->add_face(face_vhandles);
+
+    // face 7 4 0
+    face_vhandles.clear();
+    face_vhandles.push_back(vhandle[7]);
+    face_vhandles.push_back(vhandle[4]);
+    face_vhandles.push_back(vhandle[0]);
+    _mesh->add_face(face_vhandles);
+}
 
 void MainWindow::boite_englobante(MyMesh* _mesh)
 {
-    MyMesh::Point  max_coord;
-    MyMesh::Point  min_coord;
+    MyMesh::Point  max_coord = MyMesh::Point(0, 0, 0);
+    MyMesh::Point  min_coord = MyMesh::Point(100000000, 10000000, 10000000);
     for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it)
     {
-        VertexHandle vh = v_it;
+        VertexHandle vh = *v_it;
         MyMesh::Point p = _mesh->point(vh);
         if(max_coord[0] < p[0]){
             max_coord[0] = p[0];
@@ -85,18 +204,43 @@ void MainWindow::boite_englobante(MyMesh* _mesh)
         if(max_coord[2] < p[2]){
             max_coord[2] = p[2];
         }
-        if(min_coord[0] < p[0]){
+        if(min_coord[0] > p[0]){
             min_coord[0] = p[0];
         }
-        if(min_coord[1] < p[1]){
+        if(min_coord[1] > p[1]){
             min_coord[1] = p[1];
         }
-        if(min_coord[2] < p[2]){
+        if(min_coord[2] > p[2]){
             min_coord[2] = p[2];
         }
     }
+    n_v_old = _mesh->n_vertices();
+    n_f_old = _mesh->n_faces();
+    n_e_old = _mesh->n_edges();
 
+    qDebug() << "nb faces avant : " << n_f_old;
+    createBox(min_coord, max_coord, _mesh);
+    qDebug() << "nb faces apres : " << _mesh->n_faces();
 
+    for(int i = n_e_old; i< _mesh->n_edges(); i++){
+        EdgeHandle eh = _mesh->edge_handle(i);
+        _mesh->set_color(eh, MyMesh::Color(255, 0, 0));
+        _mesh->data(eh).thickness += 5;
+    }
+    for(int i = n_f_old; i< _mesh->n_faces(); i++){
+        FaceHandle fh = _mesh->face_handle(i);
+        _mesh->set_color(fh, MyMesh::Color(150, 150, 150));
+    }
+    /*for(MyMesh::EdgeIter curEdge = box.edges_begin(); curEdge != box.edges_end(); curEdge++){
+        EdgeHandle eh = curEdge;
+        box.set_color(eh, MyMesh::Color(255, 0, 0));
+        box.data(eh).thickness += 5;
+    }
+
+    for(MyMesh::FaceIter curFace = box.faces_begin(); curFace != box.faces_end(); curFace++){
+        FaceHandle fh = curFace;
+        box.set_color(fh, MyMesh::Color(150, 150, 150));
+    }*/
 }
 
 MyMesh::Point MainWindow::centre_gravite(MyMesh *_mesh){
@@ -111,12 +255,16 @@ MyMesh::Point MainWindow::centre_gravite(MyMesh *_mesh){
     return centre_grav;
 }
 
-uint * MainWindow::valence(MyMesh* _mesh)
+std::map<uint,int> MainWindow::valence(MyMesh* _mesh)
 {
     int nb_sommets = _mesh->n_vertices();
     uint valences[nb_sommets];
+    for (int i = 0; i<nb_sommets; i++)
+    {
+        valences[i] = 0;
+    }
     int cpt = 0;
-    uint max = 0;
+    //uint max = 0;
 
     for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it)
     {
@@ -124,14 +272,13 @@ uint * MainWindow::valence(MyMesh* _mesh)
         valences[cpt] += _mesh->valence(vh);
         ++cpt;
     }
-    for (int i = 0; i < cpt ; i++)//vérifier si c est cpt ou cpt+1
+
+    std::map<uint, int> nb_sommets_valence; //nombre de sommets ayant la valence comme indice
+    for(int i = 0; i < cpt ; i++)
     {
-        if(valences[i] > max)
-        {
-            max=valences[i];
-        }
+        nb_sommets_valence[valences[i]] = 0;
     }
-    uint* nb_sommets_valence = new uint[max]; //nombre de sommets ayant la valence comme indice
+
     for(int i = 0; i < cpt ; i++)
     {
         nb_sommets_valence[valences[i]] += 1;
@@ -140,7 +287,8 @@ uint * MainWindow::valence(MyMesh* _mesh)
 }
 
 std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
-    std::vector<MyMesh::Scalar> faces_area;
+    //std::vector<MyMesh::Scalar> faces_area;
+    MyStats<MyMesh::Scalar> faces_area;
     std::map<MyMesh::Scalar, int> area_freq;
     MyMesh::Scalar minArea = 10000;
     MyMesh::Scalar maxArea = 0;
@@ -149,6 +297,7 @@ std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
         FaceHandle fh = *curFace;
         HalfedgeHandle heh = _mesh->halfedge_handle(fh);
         MyMesh::Scalar s = _mesh->calc_sector_area(heh);
+
         faces_area.push_back(s);
 
         if(minArea > s)
@@ -159,19 +308,23 @@ std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
 
     // maxArea = 100%
     // ? = (minArea)/maxArea
+    // Calcul de l'ecart type;
+    MyMesh::Scalar sigma = faces_area.stdev();
     MyMesh::Scalar current_area = minArea;
-    while(current_area < maxArea){
+    while(current_area <= maxArea){
         area_freq[current_area] = 0;
-        for(MyMesh::Scalar sc: faces_area){
-            if(is_in_range(sc, current_area, 1)) // marge of error equal to one.
+        for(MyMesh::Scalar sc: faces_area.get_vector()){
+            if(is_in_range(sc, current_area, sigma))
                 area_freq[current_area] += 1;
         }
-        current_area += 0.1*minArea;
+        current_area += minArea*0.1;
     }
-    current_area = maxArea;
-    for(MyMesh::Scalar sc: faces_area){
-        if(is_in_range(sc, current_area, 1)) // marge of error equal to one.
-            area_freq[current_area] += 1;
+    if(maxArea > minArea && area_freq[maxArea] == 0){
+        current_area = maxArea;
+        for(MyMesh::Scalar sc: faces_area.get_vector()){
+            if(is_in_range(sc, current_area, sigma))
+                area_freq[current_area] += 1;
+        }
     }
 
     return area_freq;
@@ -184,9 +337,9 @@ bool MainWindow::is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh:
 }
 
 std::map<MyMesh::Scalar, int> MainWindow::dihedral_angles(MyMesh *_mesh){
-    std::vector<MyMesh::Scalar> angles;
+    MyStats<MyMesh::Scalar> angles;
     std::map<MyMesh::Scalar, int> frequency;
-    MyMesh::Scalar pi= 3.14159265;
+    MyMesh::Scalar pi= M_PI;
 
     //Initialisation de la map
     int i = 0;
@@ -207,10 +360,10 @@ std::map<MyMesh::Scalar, int> MainWindow::dihedral_angles(MyMesh *_mesh){
 
     }
     // On On enumere le nombre d'angle pour chaque tranche de 10° de 0° a 360°
-    MyMesh::Scalar marginError = 2;
+    std::vector<MyMesh::Scalar> v = angles.get_vector();
     for (int i = 0; i<=360 ; i+=10) {
-        for (int j=0; j < (int) angles.size(); j++) {
-            if(is_in_range(angles.at(j), i, marginError))
+        for (int j=0; j < v.size(); j++) {
+            if(is_in_range(v.at(j), i, seuil))
                 frequency[i]++;
         }
     }
@@ -625,8 +778,12 @@ void MainWindow::on_pushButton_angleArea_clicked()
 
 void MainWindow::on_pushButton_chargement_clicked()
 {
+    showBox = false;
+    box_created = false;
+
+
     // fenêtre de sélection des fichiers
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Mesh"), "", tr("Mesh Files (*.obj)"));
+    fileName = QFileDialog::getOpenFileName(this, tr("Open Mesh"), "", tr("Mesh Files (*.obj)"));
 
     // chargement du fichier .obj dans la variable globale "mesh"
     OpenMesh::IO::read_mesh(mesh, fileName.toUtf8().constData());
@@ -635,7 +792,6 @@ void MainWindow::on_pushButton_chargement_clicked()
 
     // initialisation des couleurs et épaisseurs (sommets et arêtes) du mesh
     resetAllColorsAndThickness(&mesh);
-
     // on affiche le maillage
     displayMesh(&mesh);
 }
@@ -666,6 +822,20 @@ void MainWindow::resetAllColorsAndThickness(MyMesh* _mesh)
 // charge un objet MyMesh dans l'environnement OpenGL
 void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
 {
+
+    /*if(showBox == true){
+        MyMesh box = boite_englobante(_mesh);
+        for(MyMesh::VertexIter curVert = box.vertices_begin(); curVert != box.vertices_end(); curVert++){
+            VertexHandle vh = curVert;
+            _mesh->add_vertex(box.point(vh));
+        }
+
+        for(MyMesh::EdgeIter curEdge = box.edges_begin(); curEdge != box.edges_end(); curEdge++){
+            EdgeHandle eh = curEdge;
+
+        }
+    }*/
+
     GLuint* triIndiceArray = new GLuint[_mesh->n_faces() * 3];
     GLfloat* triCols = new GLfloat[_mesh->n_faces() * 3 * 3];
     GLfloat* triVerts = new GLfloat[_mesh->n_faces() * 3 * 3];
@@ -687,7 +857,12 @@ void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
         for (; fIt!=fEnd; ++fIt)
         {
             fvIt = _mesh->cfv_iter(*fIt);
-            if(_mesh->data(*fvIt).value > 0){triCols[3*i+0] = 255; triCols[3*i+1] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+2] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
+            if(_mesh->data(*fvIt).value > 0){
+
+                triCols[3*i+0] = 255;
+                triCols[3*i+1] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);
+                triCols[3*i+2] = 255 - std::min((_mesh->data(*fvIt).value/range) * 255.0, 255.0);
+            }
             else{triCols[3*i+2] = 255; triCols[3*i+1] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0); triCols[3*i+0] = 255 - std::min((-_mesh->data(*fvIt).value/range) * 255.0, 255.0);}
             triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
             triIndiceArray[i] = i;
@@ -710,26 +885,50 @@ void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
 
     if(mode == DisplayMode::Normal)
     {
-        MyMesh::ConstFaceIter fIt(_mesh->faces_begin()), fEnd(_mesh->faces_end());
-        MyMesh::ConstFaceVertexIter fvIt;
-        for (; fIt!=fEnd; ++fIt)
-        {
-            fvIt = _mesh->cfv_iter(*fIt);
-            triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
-            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
-            triIndiceArray[i] = i;
+         MyMesh::ConstFaceVertexIter fvIt;
+        if(showBox == true){
+            for(int j = 0; j < n_f_old; j++){
+                MyMesh::FaceHandle fIt = _mesh->face_handle(j);
+                fvIt = _mesh->cfv_iter(fIt);
+                triCols[3*i+0] = _mesh->color(fIt)[0]; triCols[3*i+1] = _mesh->color(fIt)[1]; triCols[3*i+2] = _mesh->color(fIt)[2];
+                triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+                triIndiceArray[i] = i;
 
-            i++; ++fvIt;
-            triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
-            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
-            triIndiceArray[i] = i;
+                i++; ++fvIt;
+                triCols[3*i+0] = _mesh->color(fIt)[0]; triCols[3*i+1] = _mesh->color(fIt)[1]; triCols[3*i+2] = _mesh->color(fIt)[2];
+                triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+                triIndiceArray[i] = i;
 
-            i++; ++fvIt;
-            triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
-            triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
-            triIndiceArray[i] = i;
+                i++; ++fvIt;
+                triCols[3*i+0] = _mesh->color(fIt)[0]; triCols[3*i+1] = _mesh->color(fIt)[1]; triCols[3*i+2] = _mesh->color(fIt)[2];
+                triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+                triIndiceArray[i] = i;
 
-            i++;
+                i++;
+            }
+        }
+        else {
+            MyMesh::ConstFaceIter fIt(_mesh->faces_begin()), fEnd(_mesh->faces_end());
+            MyMesh::ConstFaceVertexIter fvIt;
+            for (; fIt!=fEnd; ++fIt)
+            {
+                fvIt = _mesh->cfv_iter(*fIt);
+                triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
+                triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+                triIndiceArray[i] = i;
+
+                i++; ++fvIt;
+                triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
+                triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+                triIndiceArray[i] = i;
+
+                i++; ++fvIt;
+                triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
+                triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
+                triIndiceArray[i] = i;
+
+                i++;
+            }
         }
     }
 
@@ -758,12 +957,12 @@ void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
         }
     }
 
-
     ui->displayWidget->loadMesh(triVerts, triCols, _mesh->n_faces() * 3 * 3, triIndiceArray, _mesh->n_faces() * 3);
 
     delete[] triIndiceArray;
     delete[] triCols;
     delete[] triVerts;
+
 
     GLuint* linesIndiceArray = new GLuint[_mesh->n_edges() * 2];
     GLfloat* linesCols = new GLfloat[_mesh->n_edges() * 2 * 3];
@@ -886,4 +1085,50 @@ MainWindow::~MainWindow()
 void MainWindow::on_pushButton_clicked()
 {
     export_csv();
+}
+
+void MainWindow::delete_box(MyMesh * _mesh){
+    _mesh->request_face_status();
+    _mesh->request_edge_status();
+    _mesh->request_vertex_status();
+
+    for(int i=n_f_old; i < _mesh->n_faces(); i++){
+        FaceHandle fh= _mesh->face_handle(i);
+        _mesh->delete_face(fh);
+    }
+
+    for(int i=n_e_old; i < _mesh->n_edges(); i++){
+        EdgeHandle eh = _mesh->edge_handle(i);
+        _mesh->delete_edge(eh);
+    }
+
+    for(int i=n_v_old; i < _mesh->n_vertices(); i++){
+        VertexHandle vh = _mesh->vertex_handle(i);
+        _mesh->delete_vertex(vh);
+    }
+
+}
+
+void MainWindow::on_BoundingBox_clicked()
+{
+    if(showBox == false){
+        showBox = true;
+        if(box_created == false){
+            boite_englobante(&mesh);
+            box_created = true;
+        }
+    }
+    else{
+        showBox = false;
+        box_created = false;
+        OpenMesh::IO::read_mesh(mesh, fileName.toUtf8().constData());
+        mesh.update_normals();
+        resetAllColorsAndThickness(&mesh);
+    }
+    displayMesh(&mesh);
+}
+
+void MainWindow::on_spinBox_valueChanged(int arg1)
+{
+    seuil = arg1;
 }

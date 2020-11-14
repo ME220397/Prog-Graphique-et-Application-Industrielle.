@@ -1,10 +1,13 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <iostream>
 #include <QFileDialog>
 #include <QMainWindow>
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+#include <OpenMesh/Core/Mesh/ArrayKernel.hh>
+#include <OpenMesh/Core/Geometry/Vector11T.hh>
 
 namespace Ui {
 class MainWindow;
@@ -47,13 +50,15 @@ public:
     // Fonction de Leo
     MyMesh::Point centre_gravite(MyMesh* _mesh);
     void boite_englobante(MyMesh* _mesh);
-    uint * valence(MyMesh* _mesh);
+    std::map<uint, int> valence(MyMesh* _mesh);
     // Fonction de Elias
     bool is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh::Scalar marginOfError);
     void show_vf_list(MyMesh* _mesh);
     std::map<MyMesh::Scalar, int> area_frequency(MyMesh* _mesh);
     std::map<MyMesh::Scalar, int> dihedral_angles(MyMesh* _mesh);
     void export_csv();
+    void displayBox(MyMesh * _mesh, DisplayMode mode = DisplayMode::Normal);
+    void delete_box(MyMesh * _mesh);
     // Fonctions de thomas
     float faceArea(MyMesh* _mesh, int faceID);
     float Ai(MyMesh* _mesh, int vertexID);
@@ -93,6 +98,10 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_BoundingBox_clicked();
+
+    void on_spinBox_valueChanged(int arg1);
+
 private:
 
     bool modevoisinage;
@@ -103,7 +112,104 @@ private:
     int edgeSelection;
     int faceSelection;
 
+    int n_e_old = 0;
+    int n_f_old = 0;
+    int n_v_old = 0;
+    bool showBox = false;
+    bool box_created = false;
+    QString fileName;
+    MyMesh::Scalar seuil = 1;
     Ui::MainWindow *ui;
 };
+
+template <typename T>
+class MyStats
+{
+private:
+    std::vector<T> _distrib ;
+public:
+    MyStats () {} ;
+
+    void push_back (T data)
+    {
+        _distrib.push_back(data) ;
+    }
+
+    T min ()
+    {
+        T tmp = _distrib.at(0) ;
+        for (int i=1 ; i<_distrib.size(); i++)
+        {
+            if (_distrib.at(i) < tmp)
+                tmp = _distrib.at(i) ;
+        }
+        return tmp ;
+    }
+
+    T max ()
+    {
+        T tmp = _distrib.at(0) ;
+        for (int i=1 ; i<_distrib.size(); i++)
+        {
+            if (_distrib.at(i) > tmp)
+                tmp = _distrib.at(i) ;
+        }
+        return tmp ;
+    }
+
+    T mean ()
+    {
+        T acc(0) ;
+        std::cout << "acc : " << acc << std::endl;
+        if (_distrib.size() > 0)
+        {
+            for(int i=0; i<_distrib.size(); i++)
+            {
+                acc += _distrib.at(i) ;
+            }
+            return acc/(_distrib.size()) ;
+        }
+        else
+            return acc ;
+    }
+
+    T stdev ()
+    {
+        T m = mean() ;
+        T acc(0), tmp ;
+        if (_distrib.size() > 0)
+        {
+            for(int i=0; i<_distrib.size(); i++)
+            {
+                tmp = _distrib.at(i) - m ;
+                acc += tmp * tmp ;
+            }
+            return sqrt(acc/(_distrib.size())) ;
+        }
+        else
+            return acc ;
+    }
+
+    T stdev (T m)
+    {
+        T acc, tmp ;
+        if (_distrib.size() > 0)
+        {
+            for(int i=0; i<_distrib.size(); i++)
+            {
+                tmp = _distrib.at(i) - m ;
+                acc += tmp * tmp ;
+            }
+            return sqrt(acc/(_distrib.size())) ;
+        }
+        else
+            return acc ;
+    }
+
+    std::vector<T> get_vector(){
+        return _distrib;
+    }
+};
+
 
 #endif // MAINWINDOW_H
