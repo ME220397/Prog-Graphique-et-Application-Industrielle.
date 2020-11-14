@@ -394,6 +394,7 @@ void MainWindow::on_pushButton_angleArea_clicked()
 
 void MainWindow::on_pushButton_chargement_clicked()
 {
+    qDebug() << QDir::currentPath(); //Test
     // fenêtre de sélection des fichiers
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Mesh"), "", tr("Mesh Files (*.obj)"));
 
