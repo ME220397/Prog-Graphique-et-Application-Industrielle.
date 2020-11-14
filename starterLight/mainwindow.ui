@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>632</width>
-    <height>408</height>
+    <width>690</width>
+    <height>450</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -108,6 +108,9 @@
         </widget>
        </item>
        <item>
+        <widget class="QSpinBox" name="spinBox"/>
+       </item>
+       <item>
         <widget class="QPushButton" name="pushButton">
          <property name="text">
           <string>Export CSV</string>
@@ -145,7 +148,14 @@
      </widget>
     </item>
     <item>
-     <widget class="MeshViewerWidget" name="displayWidget" native="true"/>
+     <widget class="MeshViewerWidget" name="displayWidget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -154,7 +164,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>632</width>
+     <width>690</width>
      <height>22</height>
     </rect>
    </property>
