@@ -299,7 +299,7 @@ std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
             futureEdge = _mesh->calc_edge_vector(eh);
         }
 
-        faces_area = (1/2)*(-curEdge[1]*futureEdge[2]+curEdge[2]*futureEdge[1] + curEdge[0]*futureEdge[2] -curEdge[2]*futureEdge[0] -curEdge[0]*futureEdge[1] + curEdge[1]*futureEdge[0]);
+        faces_area.push_back((1/2)*(curEdge[1]*futureEdge[2]-curEdge[2]*futureEdge[1] - curEdge[0]*futureEdge[2] +curEdge[2]*futureEdge[0] +curEdge[0]*futureEdge[1] - curEdge[1]*futureEdge[0]));
     }
 }
 
