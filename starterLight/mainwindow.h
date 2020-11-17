@@ -66,7 +66,6 @@ public:
     float angleEE(MyMesh* _mesh, int vertexID, int faceID);
     void H_Curv(MyMesh* _mesh);
     void K_Curv(MyMesh* _mesh);
-
     bool test_lonely_face(MyMesh* _mesh);
     bool test_lonely_vertex(MyMesh* _mesh);
     bool test_lonely_edge(MyMesh* _mesh);
@@ -79,6 +78,7 @@ public:
     int nb_points_isole(MyMesh* _mesh);
     int nb_aretes_isole(MyMesh* _mesh);
     std::map<MyMesh::Scalar, int> ecart_ang(MyMesh* _mesh);
+    bool is_hole(MyMesh* _mesh);
 
 
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);

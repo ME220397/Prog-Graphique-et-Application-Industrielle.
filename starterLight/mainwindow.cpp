@@ -11,6 +11,7 @@ void MainWindow::get_carac(MyMesh* _mesh){
     qDebug() << "Nombre de sommets "<< _mesh->n_vertices();
     qDebug() << "Nombre de faces :" << _mesh->n_faces();
     qDebug() << "Is triangle" << _mesh->is_triangles();
+    qDebug() << "Is hole" << is_hole(_mesh);
 }
 
 void MainWindow::export_csv(){
@@ -704,7 +705,7 @@ void MainWindow::K_Curv(MyMesh* _mesh)
             VertexHandle vh = *v_it;
             kCurv = 0;
             angle = 0;
-            for(MyMesh::VertexFaceIter  vf_it = _mesh->vf_iter(vh); vf_it; ++vf_it) {
+            for(MyMesh::VertexFaceIter  vf_it = _mesh->vf_iter(vh); vf_it.is_valid(); ++vf_it) {
                     FaceHandle fh = *vf_it;
                     angle += angleEE(_mesh, vh.idx(), fh.idx());
             }
@@ -712,6 +713,15 @@ void MainWindow::K_Curv(MyMesh* _mesh)
             kCurv = (1/Ai(_mesh, vh.idx())) * ( 2*M_PI -  angle);
             _mesh->data(vh).value = kCurv;
         }
+}
+
+bool MainWindow::is_hole(MyMesh *_mesh){
+    for(MyMesh::EdgeIter e_it = _mesh->edges_begin(); e_it != _mesh->edges_end(); ++e_it){
+        if(_mesh->is_boundary(*e_it)){
+            return true;
+        }
+    }
+    return false;
 }
 
 /* **** fin de la partie à compléter **** */
