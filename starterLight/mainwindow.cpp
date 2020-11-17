@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <QDir>
-
+#include<cmath>
 
 /* **** début de la partie à compléter **** */
 void MainWindow::get_carac(MyMesh* _mesh){
@@ -281,6 +281,35 @@ std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
     MyMesh::Scalar minArea = 10000;
     MyMesh::Scalar maxArea = 0;
 
+    for (MyMesh::FaceIter curFace = _mesh->faces_begin(); curFace != _mesh->faces_end(); curFace++)
+    {
+        MyMesh::FaceEdgeIter fe_it = mesh.fe_iter(*curFace);
+        VectorT<float,3> curEdge;
+        VectorT<float,3> futureEdge;
+        if(fe_it.is_valid())
+        {
+            EdgeHandle eh = *fe_it;
+            curEdge = _mesh->calc_edge_vector(eh);
+        }
+
+        fe_it++;
+        if(fe_it.is_valid())
+        {
+            EdgeHandle eh = *fe_it;
+            futureEdge = _mesh->calc_edge_vector(eh);
+        }
+
+        faces_area = (1/2)*(-curEdge[1]*futureEdge[2]+curEdge[2]*futureEdge[1] + curEdge[0]*futureEdge[2] -curEdge[2]*futureEdge[0] -curEdge[0]*futureEdge[1] + curEdge[1]*futureEdge[0]);
+    }
+}
+
+/*std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
+    //std::vector<MyMesh::Scalar> faces_area;
+    MyStats<MyMesh::Scalar> faces_area;
+    std::map<MyMesh::Scalar, int> area_freq;
+    MyMesh::Scalar minArea = 10000;
+    MyMesh::Scalar maxArea = 0;
+
     for (MyMesh::FaceIter curFace = _mesh->faces_begin(); curFace != _mesh->faces_end(); curFace++) {
         FaceHandle fh = *curFace;
         HalfedgeHandle heh = _mesh->halfedge_handle(fh);
@@ -297,26 +326,21 @@ std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
     // maxArea = 100%
     // ? = (minArea)/maxArea
     // Calcul de l'ecart type;
-    MyMesh::Scalar sigma = faces_area.stdev();
     MyMesh::Scalar current_area = minArea;
+    MyMesh::Scalar err = 0.1*(maxArea - minArea)/2;
     while(current_area <= maxArea){
+
         area_freq[current_area] = 0;
         for(MyMesh::Scalar sc: faces_area.get_vector()){
-            if(is_in_range(sc, current_area, sigma))
+
+            if(is_in_range(sc, current_area, err)) // marge of error equal to one.
                 area_freq[current_area] += 1;
         }
-        current_area += minArea*0.1;
-    }
-    if(maxArea > minArea && area_freq[maxArea] == 0){
-        current_area = maxArea;
-        for(MyMesh::Scalar sc: faces_area.get_vector()){
-            if(is_in_range(sc, current_area, sigma))
-                area_freq[current_area] += 1;
-        }
+        current_area += 0.1*(maxArea-minArea);
     }
 
     return area_freq;
-}
+}*/
 
 bool MainWindow::is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh::Scalar marginOfError){
     if(valueTest >= a - marginOfError && valueTest <= a + marginOfError)
