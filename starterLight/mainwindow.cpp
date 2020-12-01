@@ -7,21 +7,43 @@
 
 
 /* **** début de la partie à compléter **** */
+void MainWindow::translate_to_origin(MyMesh *_mesh){
+    MyMesh::Point B;
+    MyMesh::Point O;
+    B *= 0;
+    O *= 0;
+
+    for(MyMesh::VertexIter v = _mesh->vertices_begin(); v != _mesh->vertices_end(); v++){
+        B += _mesh->point(*v);
+    }
+    B /= _mesh->n_vertices();
+
+    MyMesh::Point BO = O - B;
+
+    for (MyMesh::VertexIter v = _mesh->vertices_begin(); v != _mesh->vertices_end(); v++) {
+        MyMesh::Point newPoint = _mesh->point(*v) + BO;
+        _mesh->set_point(*v, newPoint);
+    }
+
+}
 void MainWindow::get_carac(MyMesh* _mesh){
+    int euler_formula = _mesh->n_vertices() - _mesh->n_edges() + _mesh->n_faces();
     qDebug() << "Nombre de sommets "<< _mesh->n_vertices();
     qDebug() << "Nombre de faces :" << _mesh->n_faces();
+    qDebug() << "Nombre d'arêtes" << _mesh->n_edges();
     qDebug() << "Is triangle" << _mesh->is_triangles();
+    qDebug() << "Euler-Poincaré = " << euler_formula;
 }
 
 void MainWindow::export_csv(){
-    std::map<MyMesh::Scalar, int> area_freq = area_frequency(&mesh);
+    std::map<double, int> area_freq = area_frequency(&mesh);
     std::map<MyMesh::Scalar, int> dihedral_freq = dihedral_angles(&mesh);
     std::map<uint, int> valence_freq = valence(&mesh);
     std::map<MyMesh::Scalar, int> ecart_angulaire = ecart_ang(&mesh);
     /** Frequence des aires **/
     // chemin à changer selon votre systeme
     // Elias = "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
-    QString path =  "./CSV/angledi.csv";
+    QString path =  "./CSV/area.csv";
     //QString path = "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
     //QString path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/area.csv";
     QFile my_area(path);
@@ -43,6 +65,7 @@ void MainWindow::export_csv(){
     //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
     //path =  "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
     //path =  "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/angleDihedre.csv";
+    path = "./CSV/angledi.csv";
     QFile my_dihedral(path);
 
     if(my_dihedral.open(QFile::WriteOnly|QFile::Truncate)){
@@ -58,6 +81,7 @@ void MainWindow::export_csv(){
     /** Valences **/
     //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
     //path =  "/home/kammerlocher/prog_indus/Prog-Graphique-et-Application-Industrielle./CSV/valence.csv";
+    path = "./CSV/valences.csv";
     QFile my_valence(path);
 
     if(my_valence.open(QFile::WriteOnly|QFile::Truncate)){
@@ -73,11 +97,12 @@ void MainWindow::export_csv(){
     /** Ecart Angulaire **/
     //path =  "/Users/eliasmunoz/Documents/Git Projects/Prog-Graphique-et-Application-Industrielle./CSV/angledi.csv";
     //path = "/home/thomas/Desktop/Master 2/Prog-Graphique-Appl-Indus/Prog-Graphique-et-Application-Industrielle./CSV/ecartAngulaire.csv";
+    path = "./CSV/Ecart angulaire.csv";
     QFile my_ecart(path);
 
     if(my_ecart.open(QFile::WriteOnly|QFile::Truncate)){
         QTextStream stream(&my_ecart);
-        stream << "Ecart angulaire," << "nombres\n";
+        stream << "Ecart angulaire," << "nb sommets\n";
         for(auto& x: ecart_angulaire) {
             qDebug() << x.first << "," << x.second;
             if(x.second > 0) stream << x.first << "," << x.second << "\n";
@@ -286,52 +311,96 @@ std::map<uint,int> MainWindow::valence(MyMesh* _mesh)
     return  nb_sommets_valence;
 }
 
-std::map<MyMesh::Scalar, int> MainWindow::area_frequency(MyMesh* _mesh) {
-    //std::vector<MyMesh::Scalar> faces_area;
-    MyStats<MyMesh::Scalar> faces_area;
-    std::map<MyMesh::Scalar, int> area_freq;
-    MyMesh::Scalar minArea = 10000;
-    MyMesh::Scalar maxArea = 0;
+double MainWindow::calcul_area(MyMesh::Point p[]){
+    MyMesh::Point v1 = p[0];
+    MyMesh::Point v2 = p[1];
+    MyMesh::Point v3 = p[2];
 
-    for (MyMesh::FaceIter curFace = _mesh->faces_begin(); curFace != _mesh->faces_end(); curFace++) {
-        FaceHandle fh = *curFace;
-        HalfedgeHandle heh = _mesh->halfedge_handle(fh);
-        MyMesh::Scalar s = _mesh->calc_sector_area(heh);
+    // on recupere le vecteur v1v2
+    MyMesh::Point u = v2 - v1;
+    // on recupere le vecteur v1v3
+    MyMesh::Point v = v3 - v1;
 
-        faces_area.push_back(s);
+    double ux = u[0], uy = u[1], uz = u[2];
+    double vx = v[0], vy = v[1], vz = v[2];
 
-        if(minArea > s)
-            minArea = s;
-        if(maxArea < s)
-            maxArea = s;
-    }
+    // on calcul les determinant du produit vectoriel
+    volatile double i = (uy*vz - vy*uz);
+    volatile double j = (ux*vz - vx*uz);
+    volatile double k = (ux*vy - vx*uy);
 
-    // maxArea = 100%
-    // ? = (minArea)/maxArea
-    // Calcul de l'ecart type;
-    MyMesh::Scalar sigma = faces_area.stdev();
-    MyMesh::Scalar current_area = minArea;
-    while(current_area <= maxArea){
-        area_freq[current_area] = 0;
-        for(MyMesh::Scalar sc: faces_area.get_vector()){
-            if(is_in_range(sc, current_area, sigma))
-                area_freq[current_area] += 1;
-        }
-        current_area += minArea*0.1;
-    }
-    if(maxArea > minArea && area_freq[maxArea] == 0){
-        current_area = maxArea;
-        for(MyMesh::Scalar sc: faces_area.get_vector()){
-            if(is_in_range(sc, current_area, sigma))
-                area_freq[current_area] += 1;
-        }
-    }
+    volatile double area2 = i - j + k;
+    volatile double area = abs(area2)/2.0;
 
-    return area_freq;
+    return area;
+
+}
+bool AreSame(double a, double b)
+{
+    return fabs(a - b) < DBL_EPSILON;
 }
 
-bool MainWindow::is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh::Scalar marginOfError){
-    if(valueTest >= a - marginOfError && valueTest <= a + marginOfError)
+std::map<double, int> MainWindow::area_frequency(MyMesh* _mesh) {
+    std::map<double, int> freq;
+    // On recupere le nombre de faces
+    int n_faces = _mesh->n_faces();
+    // On crée un tableau qui contiendra l'aire des faces
+    double aires[n_faces];
+    double minArea = 1000000.0;
+    double maxArea = 0.0;
+    double current_area = 0.0;
+    int cpt = 0;
+    //initialisation
+    for(int i = 0; i<n_faces; i++){
+        aires[i] = 0;
+    }
+
+    MyMesh::Point points[3];
+    int cpt_points = 0;
+    // On va maintenant parcourir les faces du maillage et calculer l'aire associé
+    for(MyMesh::FaceIter current_face = _mesh->faces_begin(); current_face != _mesh->faces_end(); current_face++){
+        // On recupere les point de la face triangulé
+        cpt_points= 0;
+        for(MyMesh::FaceVertexIter current_vertex = _mesh->fv_iter(*current_face); current_vertex.is_valid(); current_vertex++){
+            VertexHandle vh = *current_vertex;
+            points[cpt_points++] = _mesh->point(vh);
+        }
+        current_area = calcul_area(points);
+        aires[cpt++] = current_area;
+        if(minArea > current_area) minArea = current_area;
+        if(maxArea < current_area) maxArea = current_area;
+    }
+
+    volatile double sigma = 0.1*(maxArea - minArea);
+    double current = minArea;
+    qDebug() << "aire min : " << minArea;
+    qDebug() << "aire max : " << maxArea;
+
+    if(minArea == maxArea){
+        for(int i = 0; i< n_faces; i++){
+            qDebug() << "aire = " << aires[i];
+            freq[current] +=1;
+        }
+    }
+    else{
+        while(current <= maxArea){
+            freq[current] = 0;
+            for(int i = 0; i< n_faces; i++){
+                if(is_in_range(aires[i], current, sigma)){
+                    qDebug() << "freq[" << current << "] = " << freq[current];
+                    freq[current] +=1;
+                }
+            }
+            if(sigma == 0)
+                break;
+            current += sigma;
+        }
+    }
+    return freq;
+}
+
+bool MainWindow::is_in_range(double valueTest, double a, double marginOfError){
+    if(valueTest > a - marginOfError && valueTest <= a + marginOfError)
         return true;
     return false;
 }
@@ -363,7 +432,7 @@ std::map<MyMesh::Scalar, int> MainWindow::dihedral_angles(MyMesh *_mesh){
     std::vector<MyMesh::Scalar> v = angles.get_vector();
     for (int i = 0; i<=360 ; i+=10) {
         for (int j=0; j < v.size(); j++) {
-            if(is_in_range(v.at(j), i, seuil))
+            if(is_in_range(v.at(j), i, 5))
                 frequency[i]++;
         }
     }
@@ -916,7 +985,6 @@ void MainWindow::displayMesh(MyMesh* _mesh, DisplayMode mode)
                 triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
                 triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
                 triIndiceArray[i] = i;
-
                 i++; ++fvIt;
                 triCols[3*i+0] = _mesh->color(*fIt)[0]; triCols[3*i+1] = _mesh->color(*fIt)[1]; triCols[3*i+2] = _mesh->color(*fIt)[2];
                 triVerts[3*i+0] = _mesh->point(*fvIt)[0]; triVerts[3*i+1] = _mesh->point(*fvIt)[1]; triVerts[3*i+2] = _mesh->point(*fvIt)[2];
@@ -1131,4 +1199,10 @@ void MainWindow::on_BoundingBox_clicked()
 void MainWindow::on_spinBox_valueChanged(int arg1)
 {
     seuil = arg1;
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    translate_to_origin(&mesh);
+    displayMesh(&mesh);
 }
