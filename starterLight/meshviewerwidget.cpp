@@ -346,11 +346,12 @@ void MeshViewerWidget::mouseReleaseEvent( QMouseEvent* /* _event */ )
 
 void MeshViewerWidget::wheelEvent(QWheelEvent* _event)
 {
-    float d = -(float)_event->delta() / 120.0 * 0.2 * radius_;
+    float d = -(float)_event->delta() / 120.0 * 0.1 * radius_;
     translate(Vec3f(0.0, 0.0, d));
     updateGL();
     _event->accept();
 }
+
 
 bool MeshViewerWidget::map_to_sphere( const QPoint& _v2D, OpenMesh::Vec3f& _v3D )
 {
