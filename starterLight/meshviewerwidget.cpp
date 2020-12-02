@@ -267,7 +267,7 @@ void MeshViewerWidget::update_projection_matrix()
 {
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
-    gluPerspective(45.0, (GLfloat) width() / (GLfloat) height(), 0.01*radius_, 100.0*radius_);
+    gluPerspective(45.0, (GLfloat) width() / (GLfloat) height(), 0.01*radius_, 10000*radius_);
     glGetDoublev( GL_PROJECTION_MATRIX, projection_matrix_);
     glMatrixMode( GL_MODELVIEW );
 }
