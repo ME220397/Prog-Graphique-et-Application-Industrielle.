@@ -52,13 +52,14 @@ public:
     void boite_englobante(MyMesh* _mesh);
     std::map<uint, int> valence(MyMesh* _mesh);
     // Fonction de Elias
-    bool is_in_range(MyMesh::Scalar valueTest, MyMesh::Scalar a, MyMesh::Scalar marginOfError);
+    bool is_in_range(double valueTest, double a, double marginOfError);
     void show_vf_list(MyMesh* _mesh);
-    std::map<MyMesh::Scalar, int> area_frequency(MyMesh* _mesh);
+    std::map<double, int> area_frequency(MyMesh* _mesh);
     std::map<MyMesh::Scalar, int> dihedral_angles(MyMesh* _mesh);
     void export_csv();
     void displayBox(MyMesh * _mesh, DisplayMode mode = DisplayMode::Normal);
     void delete_box(MyMesh * _mesh);
+    double calcul_area(MyMesh::Point p[]);
     // Fonctions de thomas
     float faceArea(MyMesh* _mesh, int faceID);
     float Ai(MyMesh* _mesh, int vertexID);
@@ -66,7 +67,6 @@ public:
     float angleEE(MyMesh* _mesh, int vertexID, int faceID);
     void H_Curv(MyMesh* _mesh);
     void K_Curv(MyMesh* _mesh);
-
     bool test_lonely_face(MyMesh* _mesh);
     bool test_lonely_vertex(MyMesh* _mesh);
     bool test_lonely_edge(MyMesh* _mesh);
@@ -79,6 +79,8 @@ public:
     int nb_points_isole(MyMesh* _mesh);
     int nb_aretes_isole(MyMesh* _mesh);
     std::map<MyMesh::Scalar, int> ecart_ang(MyMesh* _mesh);
+    void translate_to_origin(MyMesh *_mesh);
+    bool is_hole(MyMesh* _mesh);
 
 
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);
@@ -101,6 +103,8 @@ private slots:
     void on_BoundingBox_clicked();
 
     void on_spinBox_valueChanged(int arg1);
+
+    void on_pushButton_2_clicked();
 
 private:
 
