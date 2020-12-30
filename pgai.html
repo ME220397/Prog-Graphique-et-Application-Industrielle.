@@ -1,0 +1,107 @@
+
+        
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8" />
+                <title>PGAI</title>
+        
+            </head>
+            <body>
+                <script src="three.js/build/three.js"></script>
+                <script src="three.js/examples/js/controls/OrbitControls.js"></script>
+                <script src="three.js/examples/js/loaders/OBJLoader.js"></script>
+                <script src="three.js/examples/js/libs/stats.min.js"></script>
+        
+                <script>
+                    const scene = new THREE.Scene();
+                    // scene.background = new THREE.Color( 0x006fff );
+                    
+                    const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+                    const raycaster = new THREE.Raycaster();
+
+                   
+         
+                    const renderer = new THREE.WebGLRenderer();
+                    renderer.setSize( window.innerWidth, window.innerHeight );
+                    document.body.appendChild( renderer.domElement );
+        
+                     var controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+                    const geometry = new THREE.BufferGeometry();
+                    // create a simple square shape. We duplicate the top left and bottom right
+                    // vertices because each vertex needs to appear once per triangle.
+                    const vertices = new Float32Array( [
+                        -1.0, -1.0,  1.0,
+                        1.0, -1.0,  1.0,
+                        1.0,  1.0,  1.0,
+
+                        1.0,  1.0,  1.0,
+                        -1.0,  1.0,  1.0,
+                        -1.0, -1.0,  1.0
+                    ] );
+
+                    // itemSize = 3 because there are 3 values (components) per vertex
+                    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+                    const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+                    const mesh = new THREE.Mesh( geometry, material );
+
+                    scene.add(mesh);
+
+                    camera.position.z = 5;
+                    controls.update();
+
+                    let point = new THREE.Points(geometry.vertices, material);
+
+                    let points = { point };
+
+                    window.addEventListener("click", function(event){
+                        raycaster.setFromCamera( mouse, camera );
+
+                        // calculate objects intersecting the picking ray
+                        let intersects = raycaster.intersectObjects( scene.children );
+
+                        if (intersects != null) {
+                            var faceIndices;
+                            if (intersects.face != null) {
+                                faceIndices = [ face.a, face.b, face.c ];
+                            } else if (intersects.indices != null) {
+                                faceIndices = intersects[0].indices;
+                            }
+
+                            // do something with the faceIndices
+                            // console.log(faceIndices);
+                        }
+
+                        console.log(intersects[0].face);
+                        console.log(intersects[0].distance);
+
+                        for ( let i = 0; i < intersects.length; i ++ ) {
+
+                            intersects[ i ].object.material.color.set( 0xff0000 );
+
+                        }
+                    });
+        
+                    const mouse = new THREE.Vector2();
+
+                    function onMouseMove( event ) {
+                        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+                    }
+
+                    function animate() {
+                        requestAnimationFrame( animate );
+
+                        // update the picking ray with the camera and mouse position
+                        controls.update();
+
+                        renderer.render( scene, camera );
+                    }
+
+                    window.addEventListener( 'mousemove', onMouseMove, false );
+                    animate();
+                </script>
+            </body>
+        </html>

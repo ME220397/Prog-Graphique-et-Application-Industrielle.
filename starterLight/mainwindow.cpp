@@ -27,6 +27,7 @@ void MainWindow::translate_to_origin(MyMesh *_mesh){
     }
 
 }
+
 void MainWindow::get_carac(MyMesh* _mesh){
     int euler_formula = _mesh->n_vertices() - _mesh->n_edges() + _mesh->n_faces();
     qDebug() << "Nombre de sommets "<< _mesh->n_vertices();
@@ -35,6 +36,17 @@ void MainWindow::get_carac(MyMesh* _mesh){
     qDebug() << "Is triangle" << _mesh->is_triangles();
     qDebug() << "Euler-Poincaré = " << euler_formula;
     qDebug() << "Is hole" << is_hole(_mesh);
+    qDebug() << "AIRE : " << aire_test(_mesh);
+}
+
+float MainWindow::aire_test(MyMesh* _mesh){
+    float area_test = 0.;
+    for(MyMesh::FaceIter f_it = _mesh->faces_begin(); f_it != _mesh->faces_end(); f_it++){
+        HalfedgeHandle heh = _mesh->halfedge_handle(*f_it);
+        area_test += _mesh->calc_sector_area(heh);
+    }
+
+    return area_test;
 }
 
 void MainWindow::export_csv(){

@@ -82,7 +82,7 @@ public:
     std::map<MyMesh::Scalar, int> ecart_ang(MyMesh* _mesh);
     void translate_to_origin(MyMesh *_mesh);
     bool is_hole(MyMesh* _mesh);
-
+    float aire_test(MyMesh* _mesh);
 
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);
     void resetAllColorsAndThickness(MyMesh* _mesh);
