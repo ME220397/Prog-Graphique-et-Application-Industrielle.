@@ -82,7 +82,6 @@ public:
     void translate_to_origin(MyMesh *_mesh);
     bool is_hole(MyMesh* _mesh);
 
-
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);
     void resetAllColorsAndThickness(MyMesh* _mesh);
 

@@ -34,6 +34,7 @@ void MainWindow::get_carac(MyMesh* _mesh){
     qDebug() << "Is triangle" << _mesh->is_triangles();
     qDebug() << "Euler-Poincaré = " << euler_formula;
     qDebug() << "Is hole" << is_hole(_mesh);
+    centre_gravite(_mesh);
 }
 
 void MainWindow::export_csv(){
@@ -71,7 +72,7 @@ void MainWindow::export_csv(){
 
     if(my_dihedral.open(QFile::WriteOnly|QFile::Truncate)){
         QTextStream stream(&my_dihedral);
-        stream << "angles dihedres (degrés)," << "nb faces\n";
+        stream << "Angles dihedres," << "nb aretes\n";
         for (auto& x: dihedral_freq) {
             qDebug() << x.first << "," << x.second;
             if(x.second > 0)
@@ -87,7 +88,7 @@ void MainWindow::export_csv(){
 
     if(my_valence.open(QFile::WriteOnly|QFile::Truncate)){
         QTextStream stream(&my_valence);
-        stream << "Valences," << "Occurences\n";
+        stream << "Valences," << "nb sommets\n";
         for (auto& x: valence_freq) {
             qDebug() << x.first << "," << x.second;
             if(x.second > 0)
@@ -272,11 +273,14 @@ void MainWindow::boite_englobante(MyMesh* _mesh)
 MyMesh::Point MainWindow::centre_gravite(MyMesh *_mesh){
     MyMesh::Point centre_grav(0.0,0.0,0.0);
     MyMesh::Point p;
+    double n = 0;
     for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it){
         p = _mesh->point(*v_it);
+        //qDebug() << "point : " << p[0] << " " << p[1] << " " << p[2];
         centre_grav += p;
+        n++;
     }
-    centre_grav /= _mesh->n_vertices();
+    centre_grav /= n;
     qDebug() << "Centre de gravité 1 : " << centre_grav[0] << " " << centre_grav[1] << " " << centre_grav[2];
     return centre_grav;
 }
@@ -284,30 +288,30 @@ MyMesh::Point MainWindow::centre_gravite(MyMesh *_mesh){
 std::map<uint,int> MainWindow::valence(MyMesh* _mesh)
 {
     int nb_sommets = _mesh->n_vertices();
-    uint valences[nb_sommets];
-    for (int i = 0; i<nb_sommets; i++)
+    std::vector<uint> soms;
+    //uint valences[nb_sommets];
+    /*for (int i = 0; i<nb_sommets; i++)
     {
         valences[i] = 0;
-    }
+    }*/
     int cpt = 0;
     //uint max = 0;
 
     for(MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); ++v_it)
     {
-        VertexHandle vh = *v_it;
-        valences[cpt] += _mesh->valence(vh);
-        ++cpt;
+        soms.push_back(_mesh->valence(*v_it));
+        //valences[cpt] += _mesh->valence(vh);
     }
 
     std::map<uint, int> nb_sommets_valence; //nombre de sommets ayant la valence comme indice
-    for(int i = 0; i < cpt ; i++)
+    for(int i = 0; i < soms.size() ; i++)
     {
-        nb_sommets_valence[valences[i]] = 0;
+        nb_sommets_valence[soms.at(i)] = 0;
     }
 
-    for(int i = 0; i < cpt ; i++)
+    for(int i = 0; i < soms.size() ; i++)
     {
-        nb_sommets_valence[valences[i]] += 1;
+        nb_sommets_valence[soms.at(i)] += 1;
     }
     return  nb_sommets_valence;
 }
@@ -326,12 +330,12 @@ double MainWindow::calcul_area(MyMesh::Point p[]){
     double vx = v[0], vy = v[1], vz = v[2];
 
     // on calcul les determinant du produit vectoriel
-    volatile double i = (uy*vz - vy*uz);
-    volatile double j = (ux*vz - vx*uz);
-    volatile double k = (ux*vy - vx*uy);
+    double i = (uy*vz - vy*uz);
+    double j = (ux*vz - vx*uz);
+    double k = (ux*vy - vx*uy);
 
-    volatile double area2 = i - j + k;
-    volatile double area = abs(area2)/2.0;
+    double area2 = i - j + k;
+    double area = abs(area2)/2.0;
 
     return area;
 
@@ -345,16 +349,14 @@ std::map<double, int> MainWindow::area_frequency(MyMesh* _mesh) {
     std::map<double, int> freq;
     // On recupere le nombre de faces
     int n_faces = _mesh->n_faces();
+    qDebug() << "n_faces() = " << _mesh->n_faces();
+    qDebug() << "n_faces = " << n_faces;
     // On crée un tableau qui contiendra l'aire des faces
     double aires[n_faces];
     double minArea = 1000000.0;
     double maxArea = 0.0;
     double current_area = 0.0;
     int cpt = 0;
-    //initialisation
-    for(int i = 0; i<n_faces; i++){
-        aires[i] = 0;
-    }
 
     MyMesh::Point points[3];
     int cpt_points = 0;
@@ -376,26 +378,29 @@ std::map<double, int> MainWindow::area_frequency(MyMesh* _mesh) {
     double current = minArea;
     qDebug() << "aire min : " << minArea;
     qDebug() << "aire max : " << maxArea;
-
-    if(minArea == maxArea){
-        for(int i = 0; i< n_faces; i++){
-            qDebug() << "aire = " << aires[i];
-            freq[current] +=1;
-        }
+    double digit = 1;
+    double test = minArea;
+    double somme = 0.0;
+    for(int i = 0; i < n_faces; i++){
+        somme += aires[i];
     }
-    else{
-        while(current <= maxArea){
-            freq[current] = 0;
-            for(int i = 0; i< n_faces; i++){
-                if(is_in_range(aires[i], current, sigma)){
-                    qDebug() << "freq[" << current << "] = " << freq[current];
-                    freq[current] +=1;
-                }
+    //qDebug() << "aire totale : " << somme;
+    while (test < 1 && test != 0){
+        digit *= 10;
+        test = minArea * digit;
+    }
+    qDebug() << "Multiplicateur aire : " << digit;
+    while(current <= maxArea){
+        freq[current*digit] = 0;
+        for(int i = 0; i< n_faces; i++){
+            if(is_in_range(aires[i], current, sigma/2)){
+                //qDebug() << "freq[" << current*digit << "] = " << freq[current*digit];
+                freq[current*digit] +=1;
             }
-            if(sigma == 0)
-                break;
-            current += sigma;
         }
+        if(sigma == 0)
+            break;
+        current += sigma;
     }
     return freq;
 }
@@ -415,7 +420,7 @@ std::map<MyMesh::Scalar, int> MainWindow::dihedral_angles(MyMesh *_mesh){
     int i = 0;
     while(i <= 360){
         frequency[i] = 0;
-        i += 10;
+        i += 5;
     }
 
     // On recupere la valeur des angles diedre
@@ -431,9 +436,9 @@ std::map<MyMesh::Scalar, int> MainWindow::dihedral_angles(MyMesh *_mesh){
     }
     // On On enumere le nombre d'angle pour chaque tranche de 10° de 0° a 360°
     std::vector<MyMesh::Scalar> v = angles.get_vector();
-    for (int i = 0; i<=360 ; i+=10) {
+    for (int i = 0; i<=360 ; i+=5) {
         for (int j=0; j < v.size(); j++) {
-            if(is_in_range(v.at(j), i, 5))
+            if(is_in_range(v.at(j), i, 2.5))
                 frequency[i]++;
         }
     }
@@ -550,13 +555,22 @@ std::map<MyMesh::Scalar, int> MainWindow::ecart_ang(MyMesh* _mesh){
     }
 
     for(int i = 0; i < (int)_mesh->n_vertices(); i++){
-        MyMesh::Scalar cle = (int)(ecart_sommet[i]*180/M_PI);
-        ecart_ang[cle] = 0;
+        //MyMesh::Scalar cle = (int)(ecart_sommet[i]*180/M_PI);
+        for(int j=0; j<360; j+=5){
+                 ecart_ang[j] = 0;
+
+        }
     }
 
     for(int i = 0; i < (int)_mesh->n_vertices(); i++){
         MyMesh::Scalar cle = (int)(ecart_sommet[i]*180/M_PI);
-        ecart_ang[cle] += 1;
+        for(int j=0; j<360; j+=5){
+                 if(is_in_range(cle, j, 2.5)){
+                     ecart_ang[j] += 1;
+                     break;
+                 }
+        }
+
     }
     return ecart_ang;
 }
