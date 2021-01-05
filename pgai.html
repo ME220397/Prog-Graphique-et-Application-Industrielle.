@@ -1,0 +1,225 @@
+
+        
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8" />
+                <title>PGAI</title>
+        
+            </head>
+            <body>
+                <script src="three.js/build/three.js"></script>
+                <script src="three.js/examples/js/controls/OrbitControls.js"></script>
+                <script src="three.js/examples/js/loaders/OBJLoader.js"></script>
+                <script src="three.js/examples/js/libs/stats.min.js"></script>
+        
+                <script>
+                    const scene = new THREE.Scene();
+                    // scene.background = new THREE.Color( 0x006fff );
+                    
+                    const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+                    const raycaster = new THREE.Raycaster();
+
+                   
+         
+                    const renderer = new THREE.WebGLRenderer();
+                    renderer.setSize( window.innerWidth, window.innerHeight );
+                    document.body.appendChild( renderer.domElement );
+        
+                     var controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+                    const geometry = new THREE.BufferGeometry();
+                    // create a simple square shape. We duplicate the top left and bottom right
+                    // vertices because each  vertex needs to appear once per triangle.
+                    const vertices = new Float32Array( [
+                        -1.0, -1.0,  1.0,
+                        1.0, -1.0,  1.0,
+                        1.0,  1.0,  1.0,
+
+                        1.0,  1.0,  1.0,
+                        -1.0,  1.0,  1.0,
+                        -1.0, -1.0,  1.0, 
+
+                         //face fond bas
+                        -1.0, -1.0, -1.0,
+                        1.0, 1.0, -1.0,
+                        1.0, -1.0, -1.0,
+
+                        1.0, 1.0, -1.0, //face fond haut
+                        -1.0, -1.0, -1.0,
+                        -1.0, 1.0, -1.0,
+
+                        1.0, 1.0, 1.0, //face droite bas
+                        1.0, -1.0, 1.0,
+                        1.0, -1.0, -1.0,
+
+                        1.0, -1.0, -1.0, //face droite haut
+                        1.0, 1.0, -1.0,
+                        1.0, 1.0, 1.0,
+
+                        -1.0, 1.0, 1.0, //face gauche bas
+                        -1.0, -1.0, -1.0,
+                        -1.0, -1.0, 1.0,
+
+                        -1.0, -1.0, -1.0, //face gauche haut
+                        -1.0, 1.0, 1.0,
+                        -1.0, 1.0, -1.0,
+
+                        1.0, -1.0, 1.0, //face bas gauche
+                        -1.0, -1.0, 1.0,
+                        -1.0, -1.0, -1.0,
+
+                        -1.0, -1.0, -1.0, //face bas droit
+                        1.0, -1.0, -1.0,
+                        1.0, -1.0, 1.0,
+
+                        1.0, 1.0, 1.0, //face haut gauche
+                        -1.0, 1.0, -1.0,
+                        -1.0, 1.0, 1.0,
+
+                        -1.0, 1.0, -1.0, //face haut droit
+                        1.0, 1.0, 1.0,
+                        1.0, 1.0, -1.0
+                    ] );
+
+                    // itemSize = 3 because there are 3 values (components) per vertex
+                    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+                    const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+                    const mesh = new THREE.Mesh( geometry, material );
+
+                    scene.add(mesh);
+
+                    camera.position.z = 5;
+                    controls.update();
+
+
+                    first = false;
+                    const index = [];
+                    firstIndex = 0;
+
+                    window.addEventListener("click", function(event){
+                        raycaster.setFromCamera( mouse, camera );
+
+                        // calculate objects intersecting the picking ray
+                        let intersects = raycaster.intersectObjects( scene.children );
+
+                        if (intersects != null) {
+                            var faceIndices;
+                            if (intersects.face != null) {
+                                faceIndices = [ face.a, face.b, face.c ];
+                            } else if (intersects.indices != null) {
+                                faceIndices = intersects[0].indices;
+                            }
+
+                            // do something with the faceIndices
+                            // console.log(faceIndices);
+                        }
+
+                        console.log(intersects[0]);
+
+                        console.log(intersects[0].point.x);
+                        let impact_point = intersects[0].point;
+
+                        // console.log("Point :" + vertices[0] + vertices[1] + vertices[2]);
+
+                        let minDist = 1000;
+                        let indexMin= 0;
+                        console.log("TAILLE" + vertices.length);
+                        for( let i = 0; i < vertices.length/3; i++){
+
+                            let x = Math.pow(impact_point.x - vertices[(i*3)], 2);
+                            let y = Math.pow(impact_point.y - vertices[(i*3)+1], 2);
+                            let z = Math.pow(impact_point.z - vertices[(i*3)+2], 2);
+                            let distance = Math.sqrt(x+y+z);
+
+                            console.log("Distance : " + distance);
+                            if(distance < minDist ){
+                                minDist = distance;
+                                indexMin = i;
+                            }
+                        }
+
+                        console.log("Taille de index : " + index.length);
+
+                        console.log(" Index a ajouter : " + indexMin);
+                        console.log(" First Index : " + index[0]);
+
+                        if(first == false && minDist < 0.2){    
+                            if(index.length == 0){
+                                index.push(indexMin);
+                                let geo = new THREE.SphereGeometry(0.02, 32, 32);
+                                const mat = new THREE.MeshBasicMaterial( { color: 0x00ffff } );
+                                const sphere = new THREE.Mesh(geo, mat);
+                                sphere.position.x = vertices[indexMin*3];
+                                sphere.position.y = vertices[(indexMin*3)+1];
+                                sphere.position.z = vertices[(indexMin*3)+2];
+                                scene.add(sphere);
+                            } else {
+                                console.log("Taille de index : " + index.length);
+                                if(index[0] != indexMin){
+                                    index.push(indexMin);
+                                    let geo = new THREE.SphereGeometry(0.02, 32, 32);
+                                    const mat = new THREE.MeshBasicMaterial( { color: 0x00ffff } );
+                                    const sphere = new THREE.Mesh(geo, mat);
+                                    sphere.position.x = vertices[indexMin*3];
+                                    sphere.position.y = vertices[(indexMin*3)+1];
+                                    sphere.position.z = vertices[(indexMin*3)+2];
+                                    scene.add(sphere);
+                                } 
+                                else {
+                                    console.log("On est retouné sur le premier");
+                                    index.push(indexMin);
+                                    first = true;
+                                }
+                                
+                            }
+                        }
+
+                        const points = [];
+                        for(let i = 0; i < index.length; i++){
+                            const x = vertices[index[i]*3];
+                            const y = vertices[(index[i]*3)+1];
+                            const z = vertices[(index[i]*3)+2];
+
+                            points.push(new THREE.Vector3(x, y, z));
+                        }
+
+                        console.log(points);
+
+                        const geometryL = new THREE.BufferGeometry().setFromPoints( points );
+                        const materialL = new THREE.LineBasicMaterial( {color: 0xffff00 } );
+                        const line = new THREE.Line( geometryL, materialL );
+                        scene.add( line );
+
+                        console.log("Distance minimale " + minDist + " D'index " + indexMin);
+
+                        for ( let i = 0; i < intersects.length; i ++ ) {
+
+                            intersects[ i ].object.material.color.set( 0xff0000 );
+
+                        }
+                    });
+        
+                    const mouse = new THREE.Vector2();
+
+                    function onMouseMove( event ) {
+                        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+                    }
+
+                    function animate() {
+                        requestAnimationFrame( animate );
+
+                        // update the picking ray with the camera and mouse position
+                        controls.update();
+
+                        renderer.render( scene, camera );
+                    }
+
+                    window.addEventListener( 'mousemove', onMouseMove, false );
+                    animate();
+
+                </script>
+            </body>
+        </html>

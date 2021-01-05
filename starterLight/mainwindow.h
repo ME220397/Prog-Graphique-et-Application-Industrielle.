@@ -50,10 +50,11 @@ public:
     // Fonction de Leo
     MyMesh::Point centre_gravite(MyMesh* _mesh);
     void boite_englobante(MyMesh* _mesh);
-    std::map<uint, int> valence(MyMesh* _mesh);
+    std::map<int, int> valence(MyMesh* _mesh);
     // Fonction de Elias
     bool is_in_range(double valueTest, double a, double marginOfError);
     void show_vf_list(MyMesh* _mesh);
+
     std::map<double, int> area_frequency(MyMesh* _mesh);
     std::map<MyMesh::Scalar, int> dihedral_angles(MyMesh* _mesh);
     void export_csv();
@@ -81,6 +82,7 @@ public:
     std::map<MyMesh::Scalar, int> ecart_ang(MyMesh* _mesh);
     void translate_to_origin(MyMesh *_mesh);
     bool is_hole(MyMesh* _mesh);
+    float aire_test(MyMesh* _mesh);
 
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);
     void resetAllColorsAndThickness(MyMesh* _mesh);
